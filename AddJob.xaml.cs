@@ -14,6 +14,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Diagnostics;
 using System.IO;
+using System.Reflection;
 
 namespace ServerWorker
 {
@@ -35,7 +36,7 @@ namespace ServerWorker
                 
             }
         }
-
+       
         public bool path_chosen = false; 
         public List<string> wait_list = new List<string> { };
         
@@ -44,12 +45,14 @@ namespace ServerWorker
             InitializeComponent();
 
             jobs_running = false;
+
+
         }
 
 
         private void add_path(object sender, RoutedEventArgs e)
         {
-
+     
             var dialog = new Microsoft.Win32.OpenFileDialog();
             dialog.DefaultExt = ".dat";
             dialog.Filter = "*.dat | *.DAT";
@@ -73,9 +76,7 @@ namespace ServerWorker
             }
             else
             {
-                // Append path to job list.
-                //job_list.AppendText("\n" + path_dat.ToString());
-
+     
                 // Add job to wait list. This makes sure the correct jobs are plotted
                 wait_list.Add("\n" + path_dat.Content.ToString());
 
@@ -88,6 +89,8 @@ namespace ServerWorker
                 job_list.ScrollToEnd();
 
                 AsyncDia.jobs.Add(path_dat);
+
+                
 
                 if (!jobs_running)
                 {
@@ -155,7 +158,14 @@ public class AsyncDia
         var path_dat = path;
 
         string root = System.IO.Directory.GetParent(path_dat.Content.ToString()).ToString();
-        String solver_file = System.IO.File.ReadAllText("C:/Users/vik/Dropbox/Code/Wintrack/pydia/foundation/res/solver.bat");
+        //String solver_file = System.IO.File.ReadAllText("C:/Users/vik/Dropbox/Code/Wintrack/pydia/foundation/res/solver.bat");
+
+        var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("ServerWorker.Resources.solver.bat");
+ 
+        TextReader tr = new StreamReader(stream);
+        string solver_file = tr.ReadToEnd();
+        
+        //String solver_file = System.IO.File.ReadAllText(ServerWorker.Properties.Resources.solver);
         string title = System.IO.Path.GetFileName(path_dat.Content.ToString());
         title = title.Remove(title.Length - 4);
 
@@ -167,7 +177,6 @@ public class AsyncDia
 
         string filename = System.IO.Path.Combine(root, "solver.bat");
         await RunProcessAsync(filename);
-        //Process.Start(System.IO.Path.Combine(root, "solver.bat"));
 
         return String.Format("Finished task : {0}", System.IO.Path.Combine(root, title));
     }

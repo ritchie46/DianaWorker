@@ -4,6 +4,15 @@
              xmlns:local="clr-namespace:ServerWorker"
              StartupUri="AddJob.xaml">
     <Application.Resources>
-         
+        <Style x:Key="Label_ExtraBold" TargetType="Label">
+            <Setter Property="FontWeight" Value="ExtraBold"></Setter>
+            <Setter Property="FontSize" Value="14"></Setter>
+        </Style>
+        <Style x:Key="Label_bold" TargetType="Label">
+            <Setter Property="FontWeight" Value="Bold"></Setter>
+            <Setter Property="FontSize" Value="14"></Setter>
+        </Style>
+
     </Application.Resources>
+
 </Application>
