@@ -1,4 +1,3 @@
-timeout 5
 @echo off
 rem
 rem Get build type from argument list
