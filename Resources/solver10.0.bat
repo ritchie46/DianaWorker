@@ -46,5 +46,3 @@ rem
     echo       Welcome to DIANA 10.0
     echo       %build_type% build
     title Diana 10.0 Command Box -  %build_type% build
-
-

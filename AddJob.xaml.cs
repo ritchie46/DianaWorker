@@ -23,42 +23,27 @@ namespace ServerWorker
     /// </summary>
     public partial class MainWindow : Window
     {
-        private bool _jobs_running;
-        public bool jobs_running
-        {
-            set
-            {
-                _jobs_running = value;
-            }
-            get
-            {
-                return _jobs_running;
-                
-            }
-        }
-       
-        public bool path_chosen = false; 
-        public List<string> wait_list = new List<string> { };
+        private bool jobs_running = false;
+        private bool path_chosen = false; 
+        private List<string> queue = new List<string> { };
         
         public MainWindow()
         {
             InitializeComponent();
-            jobs_running = false;
         }
 
 
         private void add_path(object sender, RoutedEventArgs e)
         {
-     
             var dialog = new Microsoft.Win32.OpenFileDialog();
             dialog.DefaultExt = ".dat";
             dialog.Filter = "*.dat | *.DAT";
             var succes = dialog.ShowDialog();
-                        
+   
             if (succes == true)
             {
                 path_chosen = true;
-                
+
                 // Set the value to the path_dat label
                 path_dat.Content = dialog.FileName;
             }
@@ -74,23 +59,25 @@ namespace ServerWorker
             else
             {
      
-                // Add job to wait list. This makes sure the correct jobs are plotted
-                wait_list.Add("\n" + path_dat.Content.ToString());
-                refresh_job_list();
+                // Add job to queue. This makes sure the correct jobs are printed.
+                queue.Add("\n" + path_dat.Content.ToString());
+                refreshQueueTextbox();
 
                 AsyncDia.jobs.Add(path_dat);
-
+                AsyncDia.diana_version.Add(diana_version.SelectedItem.ToString());
 
                 if (!jobs_running)
                 {   
                     // reset job list
                     AsyncDia.jobs = new List<Label> { };
                     AsyncDia.jobs.Add(path_dat);
+                    AsyncDia.diana_version = new List<string> { };
+                    AsyncDia.diana_version.Add(diana_version.SelectedItem.ToString());
 
-                    output_box.AppendText("\nStarting first job.");
+                    addToOutputbox("Starting first job.");
                     jobs_running = true;
                     await first_call();
-                    output_box.AppendText("\nAll jobs finished");
+                    addToOutputbox("All jobs finished");
                     jobs_running = false;
                 }
             }
@@ -99,11 +86,12 @@ namespace ServerWorker
         private void remove_last(object sender, RoutedEventArgs e)
             // Remove last task from the queue
         {
-            if (wait_list.Count > 0)
+            if ((queue.Count > 0 && !jobs_running) || queue.Count > 1)
             {
-                wait_list.RemoveAt(wait_list.Count - 1);
+                queue.RemoveAt(queue.Count - 1);
                 AsyncDia.jobs.RemoveAt(AsyncDia.jobs.Count - 1);
-                refresh_job_list();      
+                AsyncDia.diana_version.RemoveAt(AsyncDia.diana_version.Count - 1);
+                refreshQueueTextbox();      
             }
         }
 
@@ -113,32 +101,36 @@ namespace ServerWorker
             int count = 0;
             while (count < AsyncDia.jobs.Count)
             {
-                output_box.AppendText("\nStarting " + path_dat.Content.ToString());
-                string outp = await AsyncDia.add_job_(AsyncDia.jobs[count]);
-                output_box.AppendText("\n" + outp);
+                addToOutputbox("Starting " + path_dat.Content.ToString());
+                string outp = await AsyncDia.add_job_(AsyncDia.jobs[count], AsyncDia.diana_version[count]);
+                addToOutputbox(outp);
 
                 // remove path from tasklist
-                wait_list.RemoveAt(0);
-
-                refresh_job_list();
+                queue.RemoveAt(0);
+                refreshQueueTextbox();
                 count++;
             }
         }
 
-        public void refresh_job_list()
+        private void refreshQueueTextbox()
             // Refreshes the job list/ task queue textbox
         {
             // Refresh job list
-            job_list.Document.Blocks.Clear();
-            foreach (string path in wait_list)
+            queueTextbox.Document.Blocks.Clear();
+            foreach (string path in queue)
             {
-                job_list.AppendText(path);
+                queueTextbox.AppendText(path);
             }
-            job_list.ScrollToEnd();
+            queueTextbox.ScrollToEnd();
+        }
+
+        private void addToOutputbox(string output)
+        {
+            outputBox.AppendText(output + "\n");
+            outputBox.ScrollToEnd();
         }
 
     }
-
 }
 
 
@@ -146,16 +138,16 @@ public class AsyncDia
 {
     // A list with paths to .dat files
     public static List<Label> jobs = new List<Label> { };
+    public static List<string> diana_version = new List<string> { };
 
-
-    public static async Task<string> add_job_(Label path)
+    public static async Task<string> add_job_(Label path, string version)
     {
-        var outp = await start_process(path);
+        var outp = await start_process(path, version);
         return outp;
 
     }
 
-    public static async Task<string> start_process(Label path)
+    public static async Task<string> start_process(Label path, string version)
     {
 
         // Path to .dat file
@@ -165,8 +157,21 @@ public class AsyncDia
         string root = Directory.GetParent(path_dat.Content.ToString()).ToString();
 
         // Read solver.bat from resources
-        var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("ServerWorker.Resources.solver.bat");
- 
+        Stream stream = null;
+
+        switch (version)
+        {
+            case "System.Windows.Controls.ComboBoxItem: DIANA 10.1":
+                stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("ServerWorker.Resources.solver10.1.bat");
+                break;
+            case "System.Windows.Controls.ComboBoxItem: DIANA 10.0":
+                stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("ServerWorker.Resources.solver10.0.bat");
+                break;
+            case "System.Windows.Controls.ComboBoxItem: DIANA 9.6":
+                stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("ServerWorker.Resources.solver9.6.bat");
+                break;
+        }
+        
         TextReader tr = new StreamReader(stream);
         string solver_file = tr.ReadToEnd();
   
@@ -174,9 +179,9 @@ public class AsyncDia
         string title = System.IO.Path.GetFileName(path_dat.Content.ToString());
         title = title.Remove(title.Length - 4);
 
-        solver_file += String.Format("\ncd {0}", root);
-        solver_file += String.Format("\n    diana -m {0}", System.IO.Path.Combine(root, title));
-        solver_file += "\ntimeout 5";
+        solver_file += String.Format("\r\ncd {0}\r\n", root);
+        solver_file += String.Format("\r\n    diana -m {0}", System.IO.Path.Combine(root, title));
+        solver_file += "\r\ntimeout 5";
 
         var solv_f = new System.IO.StreamWriter(System.IO.Path.Combine(root, "solver.bat"));
         solv_f.Write(solver_file);
