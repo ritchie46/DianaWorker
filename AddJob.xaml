@@ -39,7 +39,6 @@
             <ComboBox Name="diana_version">
                 <ComboBoxItem Selector.IsSelected="True">DIANA 10.1</ComboBoxItem>
                 <ComboBoxItem>DIANA 10.0</ComboBoxItem>
-                <ComboBoxItem>DIANA 9.6</ComboBoxItem>
             </ComboBox>
         </StackPanel>
 

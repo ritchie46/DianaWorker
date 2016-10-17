@@ -58,13 +58,14 @@ namespace ServerWorker
             }
             else
             {
-     
+                string version = diana_version.SelectedItem.ToString().Substring(diana_version.SelectedItem.ToString().Length - 4);
+
                 // Add job to queue. This makes sure the correct jobs are printed.
-                queue.Add("\n" + path_dat.Content.ToString());
+                queue.Add(String.Format("\r\n{0}[{1}]", path_dat.Content.ToString(), version));
                 refreshQueueTextbox();
 
                 AsyncDia.jobs.Add(path_dat);
-                AsyncDia.diana_version.Add(diana_version.SelectedItem.ToString());
+                AsyncDia.diana_version.Add(version);
 
                 if (!jobs_running)
                 {   
@@ -72,7 +73,7 @@ namespace ServerWorker
                     AsyncDia.jobs = new List<Label> { };
                     AsyncDia.jobs.Add(path_dat);
                     AsyncDia.diana_version = new List<string> { };
-                    AsyncDia.diana_version.Add(diana_version.SelectedItem.ToString());
+                    AsyncDia.diana_version.Add(version);
 
                     addToOutputbox("Starting first job.");
                     jobs_running = true;
@@ -101,7 +102,8 @@ namespace ServerWorker
             int count = 0;
             while (count < AsyncDia.jobs.Count)
             {
-                addToOutputbox("Starting " + path_dat.Content.ToString());
+                addToOutputbox(String.Format("Starting {0} [{1}]", path_dat.Content.ToString(),
+                    AsyncDia.diana_version[count]));
                 string outp = await AsyncDia.add_job_(AsyncDia.jobs[count], AsyncDia.diana_version[count]);
                 addToOutputbox(outp);
 
@@ -126,7 +128,7 @@ namespace ServerWorker
 
         private void addToOutputbox(string output)
         {
-            outputBox.AppendText(output + "\n");
+            outputBox.AppendText(output + "\r\n");
             outputBox.ScrollToEnd();
         }
 
@@ -158,17 +160,13 @@ public class AsyncDia
 
         // Read solver.bat from resources
         Stream stream = null;
-
         switch (version)
         {
-            case "System.Windows.Controls.ComboBoxItem: DIANA 10.1":
+            case "10.1":
                 stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("ServerWorker.Resources.solver10.1.bat");
                 break;
-            case "System.Windows.Controls.ComboBoxItem: DIANA 10.0":
+            case "10.0":
                 stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("ServerWorker.Resources.solver10.0.bat");
-                break;
-            case "System.Windows.Controls.ComboBoxItem: DIANA 9.6":
-                stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("ServerWorker.Resources.solver9.6.bat");
                 break;
         }
         
@@ -179,8 +177,11 @@ public class AsyncDia
         string title = System.IO.Path.GetFileName(path_dat.Content.ToString());
         title = title.Remove(title.Length - 4);
 
-        solver_file += String.Format("\r\ncd {0}\r\n", root);
-        solver_file += String.Format("\r\n    diana -m {0}", System.IO.Path.Combine(root, title));
+        //solver_file += String.Format("\r\ncd {0}\r\n", root);
+        solver_file += String.Format("\r\ncd {0}\r\ntitle Diana 10.1 Command Box - PROJECT: {1}", root, title);
+
+        solver_file += "\r\ntimeout 5";
+        solver_file += String.Format("\r\n    diana -m {0} {1}.ff", title, title);
         solver_file += "\r\ntimeout 5";
 
         var solv_f = new System.IO.StreamWriter(System.IO.Path.Combine(root, "solver.bat"));
@@ -193,13 +194,14 @@ public class AsyncDia
         // Remove Filos File
         DirectoryInfo dir = new DirectoryInfo(root);
         FileInfo[] ff_files = dir.GetFiles("*.ff");
-
+        
         foreach (FileInfo filos in ff_files)
         {
             try
             {
                 filos.Attributes = FileAttributes.Normal;
                 File.Delete(filos.FullName);
+                File.Delete(System.IO.Path.Combine(root, "solver.bat"));
             }
             catch { }
         }
