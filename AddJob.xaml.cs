@@ -132,6 +132,11 @@ namespace ServerWorker
             outputBox.ScrollToEnd();
         }
 
+        private void updateTimer()
+        {
+            //elapsedTime.Content;
+        }
+
     }
 }
 
@@ -168,6 +173,10 @@ public class AsyncDia
             case "10.0":
                 stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("ServerWorker.Resources.solver10.0.bat");
                 break;
+            case "EV.0":
+                stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("ServerWorker.Resources.solverDEV.0.bat");
+                version = "DEVELOPMENT 10.0skype";
+                break;
         }
         
         TextReader tr = new StreamReader(stream);
@@ -178,13 +187,13 @@ public class AsyncDia
         title = title.Remove(title.Length - 4);
 
         //solver_file += String.Format("\r\ncd {0}\r\n", root);
-        solver_file += String.Format("\r\ncd {0}\r\ntitle Diana 10.1 Command Box - PROJECT: {1}", root, title);
+        solver_file += String.Format("\r\ncd {0}\r\ntitle Diana {1} Command Box - PROJECT: {2}", root, version, title);
 
         solver_file += "\r\ntimeout 5";
         solver_file += String.Format("\r\n    diana -m {0} {1}.ff", title, title);
         solver_file += "\r\ntimeout 5";
 
-        var solv_f = new System.IO.StreamWriter(System.IO.Path.Combine(root, "solver.bat"));
+        var solv_f = new StreamWriter(System.IO.Path.Combine(root, "solver.bat"));
         solv_f.Write(solver_file);
         solv_f.Close();
 
@@ -201,11 +210,14 @@ public class AsyncDia
             {
                 filos.Attributes = FileAttributes.Normal;
                 File.Delete(filos.FullName);
-                File.Delete(System.IO.Path.Combine(root, "solver.bat"));
             }
             catch { }
         }
-
+        try
+        {
+            File.Delete(System.IO.Path.Combine(root, "solver.bat"));
+        }
+        catch { }
 
         return String.Format("Finished task : {0}", System.IO.Path.Combine(root, title));
 

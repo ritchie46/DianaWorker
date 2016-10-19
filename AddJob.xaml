@@ -39,8 +39,12 @@
             <ComboBox Name="diana_version">
                 <ComboBoxItem Selector.IsSelected="True">DIANA 10.1</ComboBoxItem>
                 <ComboBoxItem>DIANA 10.0</ComboBoxItem>
+                <ComboBoxItem>DIANA DEV.0</ComboBoxItem>
             </ComboBox>
         </StackPanel>
+
+        <!--<Label Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,161,0">Elapsed time current calculation:</Label>-->
+        <Label Grid.Column="1" Grid.Row="0" Grid.ColumnSpan="2" HorizontalAlignment="Center" x:Name="elapsedTime"></Label>
 
         <Label Grid.Column="0" Grid.Row="1" VerticalAlignment="Bottom" Style="{StaticResource Label_bold}">Path to .dat file</Label>
         <Label Grid.Column="0" Grid.Row="2" Name="path_dat" VerticalAlignment="Top" Grid.ColumnSpan="2"></Label>

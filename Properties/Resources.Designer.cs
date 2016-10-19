@@ -109,5 +109,30 @@ namespace ServerWorker.Properties {
                 return ResourceManager.GetString("solver10_1", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to @echo off
+        ///rem
+        ///rem Get build type from argument list
+        ///    if &quot;%1&quot; == &quot;debug&quot;   goto SetBuildType
+        ///    if &quot;%1&quot; == &quot;release&quot; goto SetBuildType
+        ///    if &quot;%1&quot; == &quot;i4dbg&quot;   goto SetBuildType
+        ///    if &quot;%1&quot; == &quot;i4rel&quot;   goto SetBuildType
+        ///    if &quot;%1&quot; == &quot;&quot;        goto SetDefaultBuildType
+        ///    echo &quot;%0: Unknown build type %1&quot;
+        ///    set build_type=release
+        ///    echo &quot; Build type set to %build_type%&quot;
+        ///    goto BuildTypeDone
+        ///:SetBuildType
+        ///    set build_type=%1
+        ///    goto BuildTypeDone
+        ///:SetDefaultBuildType
+        ///    set buil [rest of string was truncated]&quot;;.
+        /// </summary>
+        public static string solverDEV_0 {
+            get {
+                return ResourceManager.GetString("solverDEV_0", resourceCulture);
+            }
+        }
     }
 }
