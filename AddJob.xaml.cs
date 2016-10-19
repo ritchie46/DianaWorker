@@ -64,19 +64,22 @@ namespace ServerWorker
                 queue.Add(String.Format("\r\n{0}[{1}]", path_dat.Content.ToString(), version));
                 refreshQueueTextbox();
 
-                AsyncDia.jobs.Add(path_dat);
+                AsyncDia.jobs.Add(path_dat.Content.ToString());
                 AsyncDia.diana_version.Add(version);
+                Debug.WriteLine(jobs_running);
+
 
                 if (!jobs_running)
                 {   
                     // reset job list
-                    AsyncDia.jobs = new List<Label> { };
-                    AsyncDia.jobs.Add(path_dat);
+                    AsyncDia.jobs = new List<string> { };
+                    AsyncDia.jobs.Add(path_dat.Content.ToString());
                     AsyncDia.diana_version = new List<string> { };
                     AsyncDia.diana_version.Add(version);
 
                     addToOutputbox("Starting first job.");
                     jobs_running = true;
+                    Debug.WriteLine(jobs_running);
                     await first_call();
                     addToOutputbox("All jobs finished");
                     jobs_running = false;
@@ -104,6 +107,7 @@ namespace ServerWorker
             {
                 addToOutputbox(String.Format("Starting {0} [{1}]", path_dat.Content.ToString(),
                     AsyncDia.diana_version[count]));
+                Debug.Write(AsyncDia.jobs, " jobs");
                 string outp = await AsyncDia.add_job_(AsyncDia.jobs[count], AsyncDia.diana_version[count]);
                 addToOutputbox(outp);
 
@@ -144,24 +148,24 @@ namespace ServerWorker
 public class AsyncDia
 {
     // A list with paths to .dat files
-    public static List<Label> jobs = new List<Label> { };
+    public static List<string> jobs = new List<string> { };
     public static List<string> diana_version = new List<string> { };
 
-    public static async Task<string> add_job_(Label path, string version)
+    public static async Task<string> add_job_(string path, string version)
     {
         var outp = await start_process(path, version);
         return outp;
 
     }
 
-    public static async Task<string> start_process(Label path, string version)
+    public static async Task<string> start_process(string path, string version)
     {
 
         // Path to .dat file
-        var path_dat = path;
+        //var path_dat = path;
 
         // Directory root
-        string root = Directory.GetParent(path_dat.Content.ToString()).ToString();
+        string root = Directory.GetParent(path).ToString();
 
         // Read solver.bat from resources
         Stream stream = null;
@@ -175,7 +179,7 @@ public class AsyncDia
                 break;
             case "EV.0":
                 stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("ServerWorker.Resources.solverDEV.0.bat");
-                version = "DEVELOPMENT 10.0skype";
+                version = "DEVELOPMENT 10.0";
                 break;
         }
         
@@ -183,13 +187,13 @@ public class AsyncDia
         string solver_file = tr.ReadToEnd();
   
         // Append information to solver.bat
-        string title = System.IO.Path.GetFileName(path_dat.Content.ToString());
+        string title = System.IO.Path.GetFileName(path);
         title = title.Remove(title.Length - 4);
 
         //solver_file += String.Format("\r\ncd {0}\r\n", root);
         solver_file += String.Format("\r\ncd {0}\r\ntitle Diana {1} Command Box - PROJECT: {2}", root, version, title);
 
-        solver_file += "\r\ntimeout 5";
+        solver_file += "\r\ntimeout 35";
         solver_file += String.Format("\r\n    diana -m {0} {1}.ff", title, title);
         solver_file += "\r\ntimeout 5";
 
