@@ -18,6 +18,7 @@
             <ColumnDefinition/>
             <ColumnDefinition/>
             <ColumnDefinition/>
+            <ColumnDefinition/>
         </Grid.ColumnDefinitions>
 
         <Grid.RowDefinitions>
@@ -32,10 +33,14 @@
             <RowDefinition/>
             <RowDefinition/>
             <RowDefinition/>
+            <RowDefinition/>
+            <RowDefinition/>
+            <RowDefinition/>
+            <RowDefinition/>
         </Grid.RowDefinitions>
 
-        <Label Grid.Column="2" Grid.Row="0" VerticalAlignment="Top" Margin="10, 0, 10, 10">DIANA VERSION</Label>
-        <StackPanel Grid.Column="2" Grid.Row="0" VerticalAlignment="Bottom" Margin="10, 10, 10, 0">
+        <Label Grid.Column="3" Grid.Row="0" VerticalAlignment="Top" Margin="10, 0, 10, 10">DIANA VERSION</Label>
+        <StackPanel Grid.Column="3" Grid.Row="0" VerticalAlignment="Bottom" Margin="10, 10, 10, 0">
             <ComboBox Name="diana_version">
                 <ComboBoxItem Selector.IsSelected="True">DIANA 10.1</ComboBoxItem>
                 <ComboBoxItem>DIANA 10.0</ComboBoxItem>
@@ -46,29 +51,30 @@
         <!--<Label Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,161,0">Elapsed time current calculation:</Label>-->
         <Label Grid.Column="1" Grid.Row="0" Grid.ColumnSpan="2" HorizontalAlignment="Center" x:Name="elapsedTime"></Label>
 
-        <Label Grid.Column="0" Grid.Row="1" VerticalAlignment="Bottom" Style="{StaticResource Label_bold}">Path to .dat file</Label>
-        <Label Grid.Column="0" Grid.Row="2" Name="path_dat" VerticalAlignment="Top" Grid.ColumnSpan="2"></Label>
-        <Button Grid.Column="1" Grid.Row="1" Click="add_path" Margin="10, 10, 10, 10">Choose path</Button>
-        <Button Grid.Column="2" Grid.Row="2" Click="add_job" Margin="10, 10, 10, 10">Add job</Button>
-        <Button Grid.Column="2" Grid.Row="1" Click="remove_last" Margin="10, 10, 10, 10">Remove last job</Button>
+        <Label Grid.Column="0" Grid.Row="0" VerticalAlignment="Bottom" Style="{StaticResource Label_bold}">Path to .dat file:</Label>
+        <Label Grid.Column="0" Grid.Row="1" Name="path_dat" VerticalAlignment="Top" Grid.ColumnSpan="3" ></Label>
+        <Button Grid.Column="1" Grid.Row="0" Click="add_path" Margin="10, 10, 10, 10">Choose path</Button>
+        <Button Grid.Column="3" Grid.Row="2" Click="add_job" Margin="10, 10, 10, 10">Add job</Button>
+        <Button Grid.Column="3" Grid.Row="1" Click="remove_last" Margin="10, 10, 10, 10">Remove last job</Button>
+        <Button Grid.Column="2" Grid.Row="2" Margin="10, 10, 10, 10">Insert job</Button>
         
 
-        <Label Grid.Column="0" Grid.Row="2" VerticalAlignment="Bottom" Margin="10, 0, 0, 0" Style="{StaticResource Label_bold}">Queue</Label>
+        <Label Grid.Column="0" Grid.Row="3" VerticalAlignment="Bottom" Margin="10, 0, 0, 0" Style="{StaticResource Label_bold}">Queue</Label>
 
         <RichTextBox x:Name="queueTextbox" 
                      VerticalScrollBarVisibility="Auto"
                      HorizontalScrollBarVisibility="Auto"
-                     IsReadOnly="True" Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="3"
-                     Grid.RowSpan="2" Margin="10, 10, 10, 10" >
+                     IsReadOnly="True" Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="4"
+                     Grid.RowSpan="5" Margin="10, 10, 10, 10" >
             <FlowDocument/>
         </RichTextBox>
 
 
-        <Label Grid.Column="0" Grid.Row="5" VerticalAlignment="Bottom" Margin="10, 0, 0, 0" Style="{StaticResource Label_bold}">Output box</Label>
+        <Label Grid.Column="0" Grid.Row="9" VerticalAlignment="Bottom" Margin="10, 0, 0, 0" Style="{StaticResource Label_bold}">Output box</Label>
         <RichTextBox x:Name="outputBox" 
                      VerticalScrollBarVisibility="Auto"
                      HorizontalScrollBarVisibility="Auto"
-                     IsReadOnly="True" Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="6"
+                     IsReadOnly="True" Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="10"
                      Grid.RowSpan="5" Margin="10, 10, 10, 10" >
             <FlowDocument/>
         </RichTextBox>

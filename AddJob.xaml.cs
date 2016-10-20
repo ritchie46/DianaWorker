@@ -105,10 +105,34 @@ namespace ServerWorker
             int count = 0;
             while (count < AsyncDia.jobs.Count)
             {
-                addToOutputbox(String.Format("Starting {0} [{1}]", path_dat.Content.ToString(),
-                    AsyncDia.diana_version[count]));
-                Debug.Write(AsyncDia.jobs, " jobs");
-                string outp = await AsyncDia.add_job_(AsyncDia.jobs[count], AsyncDia.diana_version[count]);
+                addToOutputbox(String.Format("Starting {0} [{1}] at {2}", 
+                    path_dat.Content.ToString(),
+                    AsyncDia.diana_version[count],
+                    DateTime.Now.ToShortTimeString()));
+
+                string outp = null;
+                
+                // Make sure the job will get a license and will not be skipped.   
+                while (true)
+                {
+                    outp = await AsyncDia.add_job_(AsyncDia.jobs[count], AsyncDia.diana_version[count]);
+
+                    // wait 2 seconds, to make sure .out file is created.
+                    System.Threading.Thread.Sleep(2000);
+
+                    DirectoryInfo dir = new DirectoryInfo(AsyncDia.root);
+                    FileInfo[] outFile = dir.GetFiles(String.Format("{0}.out", AsyncDia.title));
+
+                    using (StreamReader sr = new StreamReader(outFile[0].FullName))
+                    {
+                        string content = sr.ReadToEnd();
+                        if (!content.Contains("All licensed seats"))
+                        {
+                            break;
+                        }
+                    }
+                }
+
                 addToOutputbox(outp);
 
                 // remove path from tasklist
@@ -150,7 +174,9 @@ public class AsyncDia
     // A list with paths to .dat files
     public static List<string> jobs = new List<string> { };
     public static List<string> diana_version = new List<string> { };
-
+    public static string root = null;
+    public static string title = null;
+    
     public static async Task<string> add_job_(string path, string version)
     {
         var outp = await start_process(path, version);
@@ -164,8 +190,9 @@ public class AsyncDia
         // Path to .dat file
         //var path_dat = path;
 
+
         // Directory root
-        string root = Directory.GetParent(path).ToString();
+        root = Directory.GetParent(path).ToString();
 
         // Read solver.bat from resources
         Stream stream = null;
@@ -187,15 +214,11 @@ public class AsyncDia
         string solver_file = tr.ReadToEnd();
   
         // Append information to solver.bat
-        string title = System.IO.Path.GetFileName(path);
+        title = System.IO.Path.GetFileName(path);
         title = title.Remove(title.Length - 4);
 
-        //solver_file += String.Format("\r\ncd {0}\r\n", root);
         solver_file += String.Format("\r\ncd {0}\r\ntitle Diana {1} Command Box - PROJECT: {2}", root, version, title);
-
-        solver_file += "\r\ntimeout 35";
         solver_file += String.Format("\r\n    diana -m {0} {1}.ff", title, title);
-        solver_file += "\r\ntimeout 5";
 
         var solv_f = new StreamWriter(System.IO.Path.Combine(root, "solver.bat"));
         solv_f.Write(solver_file);
@@ -223,7 +246,10 @@ public class AsyncDia
         }
         catch { }
 
-        return String.Format("Finished task : {0}", System.IO.Path.Combine(root, title));
+        
+        return String.Format("Finished task : {0} at {1}", 
+            System.IO.Path.Combine(root, title),
+            DateTime.Now.ToShortTimeString());
 
     }
 
