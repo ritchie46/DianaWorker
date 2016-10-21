@@ -23,8 +23,8 @@ namespace ServerWorker
     /// </summary>
     public partial class MainWindow : Window
     {
-        private bool jobs_running = false;
-        private bool path_chosen = false; 
+        private bool jobsRunning = false;
+        private bool pathChosen = false; 
         private List<string> queue = new List<string> { };
         
         public MainWindow()
@@ -33,7 +33,7 @@ namespace ServerWorker
         }
 
 
-        private void add_path(object sender, RoutedEventArgs e)
+        private void addPath(object sender, RoutedEventArgs e)
         {
             var dialog = new Microsoft.Win32.OpenFileDialog();
             dialog.DefaultExt = ".dat";
@@ -42,17 +42,17 @@ namespace ServerWorker
    
             if (succes == true)
             {
-                path_chosen = true;
+                pathChosen = true;
 
                 // Set the value to the path_dat label
                 path_dat.Content = dialog.FileName;
             }
         }
 
-        private async void add_job(object sender, RoutedEventArgs e)
+        private async void addJob(object sender, RoutedEventArgs e)
             // Add job to task queue
         {
-            if (!path_chosen)
+            if (!pathChosen)
             {
                 MessageBox.Show("The path to your .dat file is not given");
             }
@@ -61,15 +61,13 @@ namespace ServerWorker
                 string version = diana_version.SelectedItem.ToString().Substring(diana_version.SelectedItem.ToString().Length - 4);
 
                 // Add job to queue. This makes sure the correct jobs are printed.
-                queue.Add(String.Format("\r\n{0}[{1}]", path_dat.Content.ToString(), version));
+                queue.Add(String.Format("{0} [{1}]", path_dat.Content.ToString(), version));
                 refreshQueueTextbox();
 
                 AsyncDia.jobs.Add(path_dat.Content.ToString());
                 AsyncDia.diana_version.Add(version);
-                Debug.WriteLine(jobs_running);
 
-
-                if (!jobs_running)
+                if (!jobsRunning)
                 {   
                     // reset job list
                     AsyncDia.jobs = new List<string> { };
@@ -77,20 +75,19 @@ namespace ServerWorker
                     AsyncDia.diana_version = new List<string> { };
                     AsyncDia.diana_version.Add(version);
 
-                    addToOutputbox("Starting first job.");
-                    jobs_running = true;
-                    Debug.WriteLine(jobs_running);
-                    await first_call();
+                    addToOutputbox("Starting first job.\r\n");
+                    jobsRunning = true;
+                    await firstCall();
                     addToOutputbox("All jobs finished");
-                    jobs_running = false;
+                    jobsRunning = false;
                 }
             }
         }
 
-        private void remove_last(object sender, RoutedEventArgs e)
+        private void removeLast(object sender, RoutedEventArgs e)
             // Remove last task from the queue
         {
-            if ((queue.Count > 0 && !jobs_running) || queue.Count > 1)
+            if ((queue.Count > 0 && !jobsRunning) || queue.Count > 1)
             {
                 queue.RemoveAt(queue.Count - 1);
                 AsyncDia.jobs.RemoveAt(AsyncDia.jobs.Count - 1);
@@ -99,19 +96,87 @@ namespace ServerWorker
             }
         }
 
-        private async Task first_call()
+        private void insertJob(object sender, RoutedEventArgs e)
+        {
+            if (!jobsRunning)
+            {
+                MessageBox.Show("There are no jobs running. \r\n\nAdd a job via the 'add job' button.");
+            }
+            else
+            {
+                rowIndexDialog input = new rowIndexDialog();
+                if (input.ShowDialog() == true)
+                {
+                    int insert = input.queueIndex;
+
+                    if (insert > 0)  // the input is correct
+                    {
+                        if (insert + AsyncDia.count >= AsyncDia.jobs.Count)
+                        {
+                            addJob(sender, e);
+                        }
+                        else
+                        {
+                            string version = diana_version.SelectedItem.ToString().Substring(diana_version.SelectedItem.ToString().Length - 4);
+
+                            // Add job to queue. This makes sure the correct jobs are printed.
+                            queue.Insert(insert, String.Format("{0}[{1}]", path_dat.Content.ToString(), version));
+                            refreshQueueTextbox();
+
+                            AsyncDia.jobs.Insert(insert + AsyncDia.count , path_dat.Content.ToString());
+                            AsyncDia.diana_version.Insert(insert + AsyncDia.count , version);
+
+                        }
+                    }
+                }                
+            }
+        }
+
+        private void removeJob(object sender, RoutedEventArgs e)
+        {
+            if (!jobsRunning)
+            {
+                MessageBox.Show("There are no jobs running. \r\n\nAdd a job via the 'add job' button.");
+            }
+            else
+            {
+                rowIndexDialog input = new rowIndexDialog();
+                input.Title = "Remove a job";
+                input.queueIndexLabel.Content = "Give the index of the job you want to remove.";
+                if (input.ShowDialog() == true)
+                {
+                    if(input.queueIndex > 0) // The input is correct
+                    {
+                        if(input.queueIndex + AsyncDia.count >= AsyncDia.jobs.Count)
+                        {
+                            MessageBox.Show("There index is larger than the number of jobs in the queue.\r\n Please use another index.");
+                        }
+                        else
+                        {
+                            queue.RemoveAt(input.queueIndex);
+                            refreshQueueTextbox();
+                            AsyncDia.jobs.RemoveAt(input.queueIndex);
+                            AsyncDia.diana_version.RemoveAt(input.queueIndex);
+                        }
+                    }
+                }
+            }
+        }
+
+        private async Task firstCall()
             // Starts working on the DIANA task queue.
         {
             int count = 0;
             while (count < AsyncDia.jobs.Count)
             {
+                AsyncDia.count = count;
                 addToOutputbox(String.Format("Starting {0} [{1}] at {2}", 
-                    path_dat.Content.ToString(),
+                    queue[0],
                     AsyncDia.diana_version[count],
                     DateTime.Now.ToShortTimeString()));
 
                 string outp = null;
-                
+                                
                 // Make sure the job will get a license and will not be skipped.   
                 while (true)
                 {
@@ -123,13 +188,20 @@ namespace ServerWorker
                     DirectoryInfo dir = new DirectoryInfo(AsyncDia.root);
                     FileInfo[] outFile = dir.GetFiles(String.Format("{0}.out", AsyncDia.title));
 
-                    using (StreamReader sr = new StreamReader(outFile[0].FullName))
+                    try
                     {
-                        string content = sr.ReadToEnd();
-                        if (!content.Contains("All licensed seats"))
+                        using (StreamReader sr = new StreamReader(outFile[0].FullName))
                         {
-                            break;
+                            string content = sr.ReadToEnd();
+                            if (!content.Contains("All licensed seats"))
+                            {
+                                break;
+                            }
                         }
+                    }
+                    catch (IndexOutOfRangeException) // If there is not .out file. Break
+                    {
+                        break;
                     }
                 }
 
@@ -147,11 +219,18 @@ namespace ServerWorker
         {
             // Refresh job list
             queueTextbox.Document.Blocks.Clear();
-            foreach (string path in queue)
+            for (int i = 0; i < queue.Count; i++)
             {
-                queueTextbox.AppendText(path);
+                if (i == 0)
+                {
+                    queueTextbox.AppendText(String.Format("[Now Running] {0}\r\n\n", queue[i]));
+                }
+                else
+                {
+                    queueTextbox.AppendText(String.Format("[index {0}] {1}\r\n", i, queue[i]));
+                }
+                queueTextbox.ScrollToEnd();
             }
-            queueTextbox.ScrollToEnd();
         }
 
         private void addToOutputbox(string output)
@@ -176,6 +255,7 @@ public class AsyncDia
     public static List<string> diana_version = new List<string> { };
     public static string root = null;
     public static string title = null;
+    public static int count = 0;
     
     public static async Task<string> add_job_(string path, string version)
     {
@@ -216,10 +296,11 @@ public class AsyncDia
         // Append information to solver.bat
         title = System.IO.Path.GetFileName(path);
         title = title.Remove(title.Length - 4);
-
-        solver_file += String.Format("\r\ncd {0}\r\ntitle Diana {1} Command Box - PROJECT: {2}", root, version, title);
+        
+        solver_file += String.Format("\r\ncd {0}\r\ntitle Diana {1} Command Box - PROJECT: {2}" +
+                                     "\r\necho starting calculation in:\ntimeout 5", root, version, title);
         solver_file += String.Format("\r\n    diana -m {0} {1}.ff", title, title);
-
+        
         var solv_f = new StreamWriter(System.IO.Path.Combine(root, "solver.bat"));
         solv_f.Write(solver_file);
         solv_f.Close();

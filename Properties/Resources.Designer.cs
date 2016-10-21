@@ -61,16 +61,6 @@ namespace ServerWorker.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
-        /// </summary>
-        public static System.Drawing.Icon sickle_and_hammer {
-            get {
-                object obj = ResourceManager.GetObject("sickle_and_hammer", resourceCulture);
-                return ((System.Drawing.Icon)(obj));
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to @echo off
         ///rem
         ///rem Get build type from argument list
