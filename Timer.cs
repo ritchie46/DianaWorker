@@ -25,9 +25,9 @@ namespace ServerWorker
         public string time()
         {
                      
-            TimeSpan ts = sw.Elapsed;
-         
-            string elapsedTime = String.Format("{0:00}:{1:00}", ts.Hours, ts.Minutes);
+            var ts = sw.Elapsed;
+
+            var elapsedTime = String.Format("{0:00}:{1:00}", ts.Hours, ts.Minutes);
             return elapsedTime;
         }
     }

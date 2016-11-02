@@ -35,9 +35,11 @@ namespace ServerWorker
 
         private void addPath(object sender, RoutedEventArgs e)
         {
-            var dialog = new Microsoft.Win32.OpenFileDialog();
-            dialog.DefaultExt = ".dat";
-            dialog.Filter = "*.dat | *.DAT";
+            var dialog = new Microsoft.Win32.OpenFileDialog
+            {
+                DefaultExt = ".dat",
+                Filter = "*.dat | *.DAT"
+            };
             var succes = dialog.ShowDialog();
    
             if (succes == true)
@@ -58,7 +60,7 @@ namespace ServerWorker
             }
             else
             {
-                string version = diana_version.SelectedItem.ToString().Substring(diana_version.SelectedItem.ToString().Length - 4);
+                var version = diana_version.SelectedItem.ToString().Substring(diana_version.SelectedItem.ToString().Length - 4);
 
                 // Add job to queue. This makes sure the correct jobs are printed.
                 queue.Add(String.Format("{0} [{1}]", path_dat.Content.ToString(), version));
@@ -104,10 +106,10 @@ namespace ServerWorker
             }
             else
             {
-                rowIndexDialog input = new rowIndexDialog();
+                var input = new rowIndexDialog();
                 if (input.ShowDialog() == true)
                 {
-                    int insert = input.queueIndex;
+                    var insert = input.queueIndex;
 
                     if (insert > 0)  // the input is correct
                     {
@@ -117,7 +119,7 @@ namespace ServerWorker
                         }
                         else
                         {
-                            string version = diana_version.SelectedItem.ToString().Substring(diana_version.SelectedItem.ToString().Length - 4);
+                            var version = diana_version.SelectedItem.ToString().Substring(diana_version.SelectedItem.ToString().Length - 4);
 
                             // Add job to queue. This makes sure the correct jobs are printed.
                             queue.Insert(insert, String.Format("{0}[{1}]", path_dat.Content.ToString(), version));
@@ -140,8 +142,10 @@ namespace ServerWorker
             }
             else
             {
-                rowIndexDialog input = new rowIndexDialog();
-                input.Title = "Remove a job";
+                var input = new rowIndexDialog
+                {
+                    Title = "Remove a job"
+                };
                 input.queueIndexLabel.Content = "Give the index of the job you want to remove.";
                 if (input.ShowDialog() == true)
                 {
@@ -166,7 +170,7 @@ namespace ServerWorker
         private async Task firstCall()
             // Starts working on the DIANA task queue.
         {
-            int count = 0;
+            var count = 0;
             while (count < AsyncDia.jobs.Count)
             {
                 AsyncDia.count = count;
@@ -185,14 +189,14 @@ namespace ServerWorker
                     // wait 2 seconds, to make sure .out file is created.
                     System.Threading.Thread.Sleep(2000);
 
-                    DirectoryInfo dir = new DirectoryInfo(AsyncDia.root);
-                    FileInfo[] outFile = dir.GetFiles(String.Format("{0}.out", AsyncDia.title));
+                    var dir = new DirectoryInfo(AsyncDia.root);
+                    var outFile = dir.GetFiles(String.Format("{0}.out", AsyncDia.title));
 
                     try
                     {
                         using (StreamReader sr = new StreamReader(outFile[0].FullName))
                         {
-                            string content = sr.ReadToEnd();
+                            var content = sr.ReadToEnd();
                             if (!content.Contains("All licensed seats"))
                             {
                                 break;
@@ -251,8 +255,8 @@ namespace ServerWorker
 public class AsyncDia
 {
     // A list with paths to .dat files
-    public static List<string> jobs = new List<string> { };
-    public static List<string> diana_version = new List<string> { };
+    public static List<string> jobs = new List<string>();
+    public static List<string> diana_version = new List<string>();
     public static string root = null;
     public static string title = null;
     public static int count = 0;
@@ -266,11 +270,6 @@ public class AsyncDia
 
     public static async Task<string> start_process(string path, string version)
     {
-
-        // Path to .dat file
-        //var path_dat = path;
-
-
         // Directory root
         root = Directory.GetParent(path).ToString();
 
@@ -289,49 +288,58 @@ public class AsyncDia
                 version = "DEVELOPMENT 10.0";
                 break;
         }
-        
-        TextReader tr = new StreamReader(stream);
-        string solver_file = tr.ReadToEnd();
-  
-        // Append information to solver.bat
-        title = System.IO.Path.GetFileName(path);
-        title = title.Remove(title.Length - 4);
-        
-        solver_file += String.Format("\r\ncd {0}\r\ntitle Diana {1} Command Box - PROJECT: {2}" +
-                                     "\r\necho starting calculation in:\ntimeout 5", root, version, title);
-        solver_file += String.Format("\r\n    diana -m {0} {1}.ff", title, title);
-        
-        var solv_f = new StreamWriter(System.IO.Path.Combine(root, "solver.bat"));
-        solv_f.Write(solver_file);
-        solv_f.Close();
 
-        string filename = System.IO.Path.Combine(root, "solver.bat");
-        await RunProcessAsync(filename);
-
-        // Remove Filos File
-        DirectoryInfo dir = new DirectoryInfo(root);
-        FileInfo[] ff_files = dir.GetFiles("*.ff");
-        
-        foreach (FileInfo filos in ff_files)
+        using (TextReader tr = new StreamReader(stream))
         {
-            try
+            var solver_file = tr.ReadToEnd();
+
+            // Append information to solver.bat
+            title = System.IO.Path.GetFileName(path);
+            title = title.Remove(title.Length - 4);
+
+            solver_file += String.Format("\r\ncd {0}\r\ntitle Diana {1} Command Box - PROJECT: {2}" +
+                                         "\r\necho starting calculation in:\ntimeout 5", root, version, title);
+            solver_file += String.Format("\r\n    diana -m {0} {1}.ff", title, title);
+
+            using (var solv_f = new StreamWriter(System.IO.Path.Combine(root, "solver.bat")))
             {
-                filos.Attributes = FileAttributes.Normal;
-                File.Delete(filos.FullName);
+                solv_f.Write(solver_file);
+                solv_f.Close();
+
+                var filename = System.IO.Path.Combine(root, "solver.bat");
+                await RunProcessAsync(filename);
+
+                // Remove Filos File
+                var dir = new DirectoryInfo(root);
+                var ff_files = dir.GetFiles("*.ff");
+
+                foreach (FileInfo filos in ff_files)
+                {
+                    try
+                    {
+                        filos.Attributes = FileAttributes.Normal;
+                        File.Delete(filos.FullName);
+                    }
+                    catch (Exception)
+                    {
+                        Debug.WriteLine("Exception occurred");
+                    }
+                }
+                try
+                {
+                    File.Delete(System.IO.Path.Combine(root, "solver.bat"));
+                }
+                catch (Exception)
+                {
+                    Debug.WriteLine("Exception occurred");
+                }
+
+
+                return String.Format("Finished task : {0} at {1}",
+                    System.IO.Path.Combine(root, title),
+                    DateTime.Now.ToShortTimeString());
             }
-            catch { }
         }
-        try
-        {
-            File.Delete(System.IO.Path.Combine(root, "solver.bat"));
-        }
-        catch { }
-
-        
-        return String.Format("Finished task : {0} at {1}", 
-            System.IO.Path.Combine(root, title),
-            DateTime.Now.ToShortTimeString());
-
     }
 
     static Task RunProcessAsync(string fileName)
