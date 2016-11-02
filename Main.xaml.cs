@@ -25,7 +25,7 @@ namespace ServerWorker
     {
         private bool jobsRunning = false;
         private bool pathChosen = false; 
-        private List<string> queue = new List<string> { };
+        private List<string> queue = new List<string>();
         
         public MainWindow()
         {
@@ -50,6 +50,8 @@ namespace ServerWorker
                 path_dat.Content = dialog.FileName;
             }
         }
+
+        private System.Threading.CancellationTokenSource cancelToken = new System.Threading.CancellationTokenSource();
 
         private async void addJob(object sender, RoutedEventArgs e)
             // Add job to task queue
@@ -242,12 +244,6 @@ namespace ServerWorker
             outputBox.AppendText(output + "\r\n");
             outputBox.ScrollToEnd();
         }
-
-        private void updateTimer()
-        {
-            //elapsedTime.Content;
-        }
-
     }
 }
 
@@ -262,13 +258,6 @@ public class AsyncDia
     public static int count = 0;
     
     public static async Task<string> add_job_(string path, string version)
-    {
-        var outp = await start_process(path, version);
-        return outp;
-
-    }
-
-    public static async Task<string> start_process(string path, string version)
     {
         // Directory root
         root = Directory.GetParent(path).ToString();
@@ -333,8 +322,6 @@ public class AsyncDia
                 {
                     Debug.WriteLine("Exception occurred");
                 }
-
-
                 return String.Format("Finished task : {0} at {1}",
                     System.IO.Path.Combine(root, title),
                     DateTime.Now.ToShortTimeString());
@@ -359,9 +346,7 @@ public class AsyncDia
             tcs.SetResult(true);
             process.Dispose();
         };
-
         process.Start();
-
         return tcs.Task;
     }
 }
