@@ -26,6 +26,7 @@ namespace ServerWorker
         private bool jobsRunning = false;
         private bool pathChosen = false; 
         private List<string> queue = new List<string>();
+        public static bool cancelNowRunning = false;
         
         public MainWindow()
         {
@@ -50,8 +51,6 @@ namespace ServerWorker
                 path_dat.Content = dialog.FileName;
             }
         }
-
-        private System.Threading.CancellationTokenSource cancelToken = new System.Threading.CancellationTokenSource();
 
         private async void addJob(object sender, RoutedEventArgs e)
             // Add job to task queue
@@ -166,6 +165,15 @@ namespace ServerWorker
                         }
                     }
                 }
+            }
+        }
+
+        private void detachJob(object sender, RoutedEventArgs e)
+        {
+            if (jobsRunning)
+            {
+                //cts.Cancel();
+                MainWindow.cancelNowRunning = true;
             }
         }
 
@@ -296,7 +304,11 @@ public class AsyncDia
                 solv_f.Close();
 
                 var filename = System.IO.Path.Combine(root, "solver.bat");
-                await RunProcessAsync(filename);
+
+                await Task.Run(() =>
+                {
+                    RunProcessAsync(filename);
+                });
 
                 // Remove Filos File
                 var dir = new DirectoryInfo(root);
@@ -329,24 +341,52 @@ public class AsyncDia
         }
     }
 
-    static Task RunProcessAsync(string fileName)
+    static  Task RunProcessAsync(string fileName)
         // Async method for waiting for the commandbox to be finished.
     {
+
         // there is no non-generic TaskCompletionSource
         var tcs = new TaskCompletionSource<bool>();
 
         var process = new Process
         {
             StartInfo = { FileName = fileName },
-            EnableRaisingEvents = true
         };
-
         process.Exited += (sender, args) =>
         {
             tcs.SetResult(true);
             process.Dispose();
         };
-        process.Start();
+
+
+        var processRunning = false;
+
+        try
+        {
+            while (true)
+            {
+                if (!processRunning)
+                {
+                    process.Start();
+                    processRunning = true;
+                }
+                if (ServerWorker.MainWindow.cancelNowRunning)
+                {
+                    process.Kill();
+                    process.Dispose();
+                    ServerWorker.MainWindow.cancelNowRunning = false;
+                    return tcs.Task;
+                }
+                if (process.HasExited)
+                {
+                    break;
+                }
+            }
+        }
+        catch (InvalidOperationException)
+        {
+            Debug.WriteLine("Console interrupted");
+        }
         return tcs.Task;
     }
 }
