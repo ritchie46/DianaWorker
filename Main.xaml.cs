@@ -15,6 +15,7 @@ using System.Windows.Shapes;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using WindowsInput.Native;
 
 namespace ServerWorker
 {
@@ -27,7 +28,7 @@ namespace ServerWorker
         private bool pathChosen = false; 
         private List<string> queue = new List<string>();
         public static bool cancelNowRunning = false;
-        
+
         public MainWindow()
         {
             InitializeComponent();
@@ -196,14 +197,14 @@ namespace ServerWorker
                 {
                     outp = await AsyncDia.add_job_(AsyncDia.jobs[count], AsyncDia.diana_version[count]);
 
-                    // wait 2 seconds, to make sure .out file is created.
-                    System.Threading.Thread.Sleep(2000);
-
-                    var dir = new DirectoryInfo(AsyncDia.root);
-                    var outFile = dir.GetFiles(String.Format("{0}.out", AsyncDia.title));
-
                     try
                     {
+                        // wait 2 seconds, to make sure .out file is created.
+                        System.Threading.Thread.Sleep(2000);
+
+                        var dir = new DirectoryInfo(AsyncDia.root);
+                        var outFile = dir.GetFiles(String.Format("{0}.out", AsyncDia.title));
+
                         using (StreamReader sr = new StreamReader(outFile[0].FullName))
                         {
                             var content = sr.ReadToEnd();
@@ -212,11 +213,13 @@ namespace ServerWorker
                                 break;
                             }
                         }
+
                     }
-                    catch (IndexOutOfRangeException) // If there is not .out file. Break
+                    catch (IOException) // There is not .out file
                     {
                         break;
                     }
+
                 }
 
                 addToOutputbox(outp);
@@ -341,6 +344,11 @@ public class AsyncDia
         }
     }
 
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    static extern bool SetForegroundWindow(IntPtr hWnd);
+
+
+
     static  Task RunProcessAsync(string fileName)
         // Async method for waiting for the commandbox to be finished.
     {
@@ -351,16 +359,15 @@ public class AsyncDia
         var process = new Process
         {
             StartInfo = { FileName = fileName },
+            
         };
         process.Exited += (sender, args) =>
         {
             tcs.SetResult(true);
             process.Dispose();
         };
-
-
+        
         var processRunning = false;
-
         try
         {
             while (true)
@@ -372,10 +379,17 @@ public class AsyncDia
                 }
                 if (ServerWorker.MainWindow.cancelNowRunning)
                 {
-                    process.Kill();
-                    process.Dispose();
+                    IntPtr pointer = process.MainWindowHandle;
+                    AsyncDia.SetForegroundWindow(pointer);
+                    System.Threading.Thread.Sleep(200);
+
+                    var sim = new WindowsInput.InputSimulator();
+                    sim.Keyboard.ModifiedKeyStroke(VirtualKeyCode.CONTROL, VirtualKeyCode.VK_C);
+                    System.Threading.Thread.Sleep(200);
+                    sim.Keyboard.KeyPress(VirtualKeyCode.VK_Y);
+                    sim.Keyboard.KeyPress(VirtualKeyCode.RETURN);
                     ServerWorker.MainWindow.cancelNowRunning = false;
-                    return tcs.Task;
+                    break;
                 }
                 if (process.HasExited)
                 {
