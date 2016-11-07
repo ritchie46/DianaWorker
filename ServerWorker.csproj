@@ -66,10 +66,18 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="rowIndexWindow.xaml.cs">
-      <DependentUpon>rowIndexWindow.xaml</DependentUpon>
+    <Compile Include="AsyncDia.cs" />
+    <Compile Include="ConvergenChecker.cs" />
+    <Compile Include="dialog.xaml.cs">
+      <DependentUpon>dialog.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Timer.cs" />
+    <Compile Include="inputDialog.xaml.cs">
+      <DependentUpon>inputDialog.xaml</DependentUpon>
+    </Compile>
+    <Page Include="dialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Main.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -82,7 +90,7 @@
       <DependentUpon>Main.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Page Include="rowIndexWindow.xaml">
+    <Page Include="inputDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

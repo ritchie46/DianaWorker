@@ -17,17 +17,16 @@ namespace ServerWorker
     /// <summary>
     /// Interaction logic for insertJobWindow.xaml
     /// </summary>
-    public partial class rowIndexDialog : Window
+    public partial class inputDialog : Window
     {
         public int queueIndex;
 
-        public rowIndexDialog()
+        public inputDialog()
         {
             InitializeComponent();
-            rowInsertBox.Text = "1";
+            textBox.Text = "1";
         }
 
-        /**
         public string title
         {
             set
@@ -38,12 +37,24 @@ namespace ServerWorker
             {
                 return this.Title;
             }
-        }*/
+        }
+
+        public Label label
+            {
+            set
+            {
+                this.queueIndexLabel = value;
+            }
+            get
+            {
+                return this.queueIndexLabel;
+            }
+        }
 
         private void rowIndexDialogOk(object sender, RoutedEventArgs e)
         {
             queueIndex = 0;
-            Int32.TryParse(rowInsertBox.Text, out queueIndex);
+            Int32.TryParse(textBox.Text, out queueIndex);
 
             this.DialogResult = true;
         }
