@@ -14,18 +14,17 @@ namespace ServerWorker
 
         public static void check()
         {
+            var path = Path.Combine(AsyncDia.root, AsyncDia.title);
+            path += ".out";
             while (AsyncDia.stop_convergence)
             {
-                var path = Path.Combine(AsyncDia.root, AsyncDia.title);
-                path += ".out";
-                Debug.WriteLine(path);
+                Debug.WriteLine("still trying");
                 try
                 {
                     using (FileStream stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                     {
                         using (StreamReader rd = new StreamReader(stream))
                         {
-
                             var content = rd.ReadToEnd();
                             var index = content.LastIndexOf("TERMINATED, NO CONVERGENCE AFTER");
                             // - 50 should be the index of the relative energy variation

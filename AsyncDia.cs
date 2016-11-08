@@ -186,10 +186,7 @@ namespace ServerWorker
                         MainWindow.cancelNowRunning = false;
                         break;
                     }
-                    if (AsyncDia.stop_convergence)
-                    {
 
-                    }
                     if (process.HasExited)
                     {
                         break;
@@ -204,7 +201,7 @@ namespace ServerWorker
             var mailAdress = AsyncDia.email[AsyncDia.count];
             if (mailAdress != "none")
             {
-                Mail.sendMail(mailAdress);
+                Mail.sendMail(mailAdress, "Your DIANA calculation is finished.", "This is an automatically generated e-mail.");
             }
             return tcs.Task;
         }

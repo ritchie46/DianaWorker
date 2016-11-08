@@ -319,6 +319,13 @@ namespace ServerWorker
             outputBox.AppendText(output + "\r\n");
             outputBox.ScrollToEnd();
         }
+
+        static void unhandledException(object sender, UnhandledExceptionEventArgs args)
+        {
+            var exception = (Exception)args.ExceptionObject;
+            Mail.sendMail("r.vink@abt.eu", "Unhandled exception", exception.Message);
+            (MainWindow)Application.Current.MainWindow.
+        }
     }
 }
 
