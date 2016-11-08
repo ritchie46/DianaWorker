@@ -50,7 +50,7 @@ namespace ServerWorker
                     File.Delete(dcf);
                     using (StreamWriter rw = new StreamWriter(dcf, false))
                     {
-                        content = "*FILOS" + Environment.NewLine + "  INITIA" + Environment.NewLine + " * INPUT" + Environment.NewLine + content;
+                        content = "*FILOS" + Environment.NewLine + "  INITIA" + Environment.NewLine + "*INPUT" + Environment.NewLine + content;
                         rw.Write(content);
                     }
                 }

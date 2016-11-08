@@ -73,52 +73,63 @@ namespace ServerWorker
                     // convert nullabe bool to bool
                     var stop_conv = dialog.radioButtonConv.IsChecked ?? false;
                     var mailAdress = dialog.radioButtonMail.IsChecked ?? false;
-                    var version = diana_version.SelectedItem.ToString().Substring(diana_version.SelectedItem.ToString().Length - 4);
+                    var insert = dialog.radioButtonInsert.IsChecked ?? false;
 
-                    // Add job to queue. This makes sure the correct jobs are printed.
-                    queue.Add(String.Format("{0} [{1}]", path_dat.Content.ToString(), version));
-                    refreshQueueTextbox();
-
-                    if (!jobsRunning)
+                    if (insert)
                     {
-                        // reset job list
-                        AsyncDia.jobs = new List<string>();
-                        AsyncDia.jobs.Add(path_dat.Content.ToString());
-                        AsyncDia.diana_version = new List<string>();
-                        AsyncDia.diana_version.Add(version);
-                        AsyncDia.stop_conv = new List<bool>();
-                        AsyncDia.stop_conv.Add(stop_conv);
-                        AsyncDia.conv_val = new List<double>();
-                        AsyncDia.conv_val.Add(dialog.conv_val);
-                        AsyncDia.email = new List<string>();
-                        if (mailAdress)
-                        {
-                            AsyncDia.email.Add(dialog.TextBoxMail.Text);
-                        }
-                        else
-                        {
-                            AsyncDia.email.Add("none");
-                        }
-
-                        addToOutputbox("Starting first job.\r\n");
-                        jobsRunning = true;
-                        await firstCall();
-                        addToOutputbox("All jobs finished");
-                        jobsRunning = false;
+                        var queueIndex = 0;
+                        Int32.TryParse(dialog.TextBoxInsert.Text, out queueIndex);
+                        insertJob(sender, e, queueIndex, dialog);
                     }
                     else
                     {
-                        AsyncDia.jobs.Add(path_dat.Content.ToString());
-                        AsyncDia.diana_version.Add(version);
-                        AsyncDia.stop_conv.Add(stop_conv);
-                        AsyncDia.conv_val.Add(dialog.conv_val);
-                        if (mailAdress)
+                        var version = diana_version.SelectedItem.ToString().Substring(diana_version.SelectedItem.ToString().Length - 4);
+
+                        // Add job to queue. This makes sure the correct jobs are printed.
+                        queue.Add(String.Format("{0} [{1}]", path_dat.Content.ToString(), version));
+                        refreshQueueTextbox();
+
+                        if (!jobsRunning)
                         {
-                            AsyncDia.email.Add(dialog.TextBoxMail.Text);
+                            // reset job list
+                            AsyncDia.jobs = new List<string>();
+                            AsyncDia.jobs.Add(path_dat.Content.ToString());
+                            AsyncDia.diana_version = new List<string>();
+                            AsyncDia.diana_version.Add(version);
+                            AsyncDia.stop_conv = new List<bool>();
+                            AsyncDia.stop_conv.Add(stop_conv);
+                            AsyncDia.conv_val = new List<double>();
+                            AsyncDia.conv_val.Add(dialog.conv_val);
+                            AsyncDia.email = new List<string>();
+                            if (mailAdress)
+                            {
+                                AsyncDia.email.Add(dialog.TextBoxMail.Text);
+                            }
+                            else
+                            {
+                                AsyncDia.email.Add("none");
+                            }
+
+                            addToOutputbox("Starting first job.\r\n");
+                            jobsRunning = true;
+                            await firstCall();
+                            addToOutputbox("All jobs finished");
+                            jobsRunning = false;
                         }
                         else
                         {
-                            AsyncDia.email.Add("none");
+                            AsyncDia.jobs.Add(path_dat.Content.ToString());
+                            AsyncDia.diana_version.Add(version);
+                            AsyncDia.stop_conv.Add(stop_conv);
+                            AsyncDia.conv_val.Add(dialog.conv_val);
+                            if (mailAdress)
+                            {
+                                AsyncDia.email.Add(dialog.TextBoxMail.Text);
+                            }
+                            else
+                            {
+                                AsyncDia.email.Add("none");
+                            }
                         }
                     }
                 }
@@ -140,59 +151,51 @@ namespace ServerWorker
             }
         }
 
-        private void insertJob(object sender, RoutedEventArgs e)
+        private void insertJob(object sender, RoutedEventArgs e, int insert, Dialog dialog)
         {
             if (!jobsRunning)
             {
-                MessageBox.Show("There are no jobs running. \r\n\nAdd a job via the 'add job' button.");
+                addJob(sender, e);
             }
             else
             {
-                var dialog = new Dialog();
-                dialog.ShowDialog();
-                if (dialog.DialogResult == true)
+            // convert nullabe bool to bool
+            var stop_conv = dialog.radioButtonConv.IsChecked ?? false;
+            var mailAdress = dialog.radioButtonMail.IsChecked ?? false;
+
+            if (insert > 0)  // the input is correct
+            {
+                if (insert + AsyncDia.count >= AsyncDia.jobs.Count)
                 {
-                    // convert nullabe bool to bool
-                    var stop_conv = dialog.radioButtonConv.IsChecked ?? false;
-                    var mailAdress = dialog.radioButtonMail.IsChecked ?? false;
+                        MessageBox.Show("The index is larger than the queue.");
+                        addJob(sender, e);
+                }
+                else
+                {
+                    var version = diana_version.SelectedItem.ToString().Substring(diana_version.SelectedItem.ToString().Length - 4);
 
-                    var input = new inputDialog();
-                    if (input.ShowDialog() == true)
+                    // Add job to queue. This makes sure the correct jobs are printed.
+                    queue.Insert(insert, String.Format("{0}[{1}]", path_dat.Content.ToString(), version));
+                    refreshQueueTextbox();
+
+                    AsyncDia.jobs.Insert(insert + AsyncDia.count, path_dat.Content.ToString());
+                    AsyncDia.diana_version.Insert(insert + AsyncDia.count, version);
+                    AsyncDia.stop_conv.Insert(insert + AsyncDia.count, stop_conv);
+                    AsyncDia.conv_val.Insert(insert + AsyncDia.count, dialog.conv_val);
+                    if (mailAdress)
                     {
-                        var insert = input.queueIndex;
-
-                        if (insert > 0)  // the input is correct
-                        {
-                            if (insert + AsyncDia.count >= AsyncDia.jobs.Count)
-                            {
-                                addJob(sender, e);
-                            }
-                            else
-                            {
-                                var version = diana_version.SelectedItem.ToString().Substring(diana_version.SelectedItem.ToString().Length - 4);
-
-                                // Add job to queue. This makes sure the correct jobs are printed.
-                                queue.Insert(insert, String.Format("{0}[{1}]", path_dat.Content.ToString(), version));
-                                refreshQueueTextbox();
-
-                                AsyncDia.jobs.Insert(insert + AsyncDia.count, path_dat.Content.ToString());
-                                AsyncDia.diana_version.Insert(insert + AsyncDia.count, version);
-                                AsyncDia.stop_conv.Insert(insert + AsyncDia.count, stop_conv);
-                                AsyncDia.conv_val.Insert(insert + AsyncDia.count, dialog.conv_val);
-                                if (mailAdress)
-                                {
-                                    AsyncDia.email.Add(dialog.TextBoxMail.Text);
-                                }
-                                else
-                                {
-                                    AsyncDia.email.Add("none");
-                                }
-                            }
-                        }
+                        AsyncDia.email.Add(dialog.TextBoxMail.Text);
+                    }
+                    else
+                    {
+                        AsyncDia.email.Add("none");
                     }
                 }
             }
-        } 
+        }
+    }
+        
+
 
         private void removeJob(object sender, RoutedEventArgs e)
         {
