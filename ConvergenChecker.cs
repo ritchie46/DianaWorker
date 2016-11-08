@@ -17,14 +17,15 @@ namespace ServerWorker
             while (AsyncDia.stop_convergence)
             {
                 var path = Path.Combine(AsyncDia.root, AsyncDia.title);
-                // for testing
-                //path = "C:\\Users\\vik\\Desktop\\leeg\\ong_char.out";
+                path += ".out";
+                Debug.WriteLine(path);
                 try
                 {
                     using (FileStream stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                     {
                         using (StreamReader rd = new StreamReader(stream))
                         {
+
                             var content = rd.ReadToEnd();
                             var index = content.LastIndexOf("TERMINATED, NO CONVERGENCE AFTER");
                             // - 50 should be the index of the relative energy variation
@@ -35,25 +36,33 @@ namespace ServerWorker
                             if (val > AsyncDia.convergence_value)
                             {
                                 MainWindow.cancelNowRunning = true;
-
+                                try
+                                {
+                                    using (StreamWriter rw = File.AppendText(path))
+                                    {
+                                        rw.WriteLine("Calculation stopped by the Worker as the stop criteria was met");
+                                    }
+                                }
+                                catch (Exception)
+                                {
+                                    Debug.WriteLine("Could not write to .out file");
+                                }
                             }
                         }
                     }
                 }
-                catch (FileNotFoundException)
+                catch (Exception)
                 {
-                    System.Threading.Thread.Sleep(10000);
+                    Debug.WriteLine("Could not find convergence value");
                 }
-                Debug.WriteLine("hier");
-                System.Threading.Thread.Sleep(5000);
 
                 if (stopMe)
                 {
                     stopMe = false;
                     break;
                 }
+                System.Threading.Thread.Sleep(15000);
             }
-
         }
     }
 }

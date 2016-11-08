@@ -33,6 +33,11 @@ namespace ServerWorker
             InitializeComponent();
         }
 
+        public void output(string content)
+        {
+            addToOutputbox(content);
+        }
+
 
         private void addPath(object sender, RoutedEventArgs e)
         {
@@ -67,6 +72,7 @@ namespace ServerWorker
                 {
                     // convert nullabe bool to bool
                     var stop_conv = dialog.radioButtonConv.IsChecked ?? false;
+                    var mailAdress = dialog.radioButtonMail.IsChecked ?? false;
                     var version = diana_version.SelectedItem.ToString().Substring(diana_version.SelectedItem.ToString().Length - 4);
 
                     // Add job to queue. This makes sure the correct jobs are printed.
@@ -84,6 +90,15 @@ namespace ServerWorker
                         AsyncDia.stop_conv.Add(stop_conv);
                         AsyncDia.conv_val = new List<double>();
                         AsyncDia.conv_val.Add(dialog.conv_val);
+                        AsyncDia.email = new List<string>();
+                        if (mailAdress)
+                        {
+                            AsyncDia.email.Add(dialog.TextBoxMail.Text);
+                        }
+                        else
+                        {
+                            AsyncDia.email.Add("none");
+                        }
 
                         addToOutputbox("Starting first job.\r\n");
                         jobsRunning = true;
@@ -97,6 +112,14 @@ namespace ServerWorker
                         AsyncDia.diana_version.Add(version);
                         AsyncDia.stop_conv.Add(stop_conv);
                         AsyncDia.conv_val.Add(dialog.conv_val);
+                        if (mailAdress)
+                        {
+                            AsyncDia.email.Add(dialog.TextBoxMail.Text);
+                        }
+                        else
+                        {
+                            AsyncDia.email.Add("none");
+                        }
                     }
                 }
             }
@@ -112,6 +135,7 @@ namespace ServerWorker
                 AsyncDia.diana_version.RemoveAt(AsyncDia.diana_version.Count - 1);
                 AsyncDia.stop_conv.RemoveAt(AsyncDia.diana_version.Count - 1);
                 AsyncDia.conv_val.RemoveAt(AsyncDia.diana_version.Count - 1);
+                AsyncDia.email.RemoveAt(AsyncDia.diana_version.Count - 1);
                 refreshQueueTextbox();      
             }
         }
@@ -130,7 +154,7 @@ namespace ServerWorker
                 {
                     // convert nullabe bool to bool
                     var stop_conv = dialog.radioButtonConv.IsChecked ?? false;
-
+                    var mailAdress = dialog.radioButtonMail.IsChecked ?? false;
 
                     var input = new inputDialog();
                     if (input.ShowDialog() == true)
@@ -155,12 +179,20 @@ namespace ServerWorker
                                 AsyncDia.diana_version.Insert(insert + AsyncDia.count, version);
                                 AsyncDia.stop_conv.Insert(insert + AsyncDia.count, stop_conv);
                                 AsyncDia.conv_val.Insert(insert + AsyncDia.count, dialog.conv_val);
+                                if (mailAdress)
+                                {
+                                    AsyncDia.email.Add(dialog.TextBoxMail.Text);
+                                }
+                                else
+                                {
+                                    AsyncDia.email.Add("none");
+                                }
                             }
                         }
                     }
                 }
             }
-        }
+        } 
 
         private void removeJob(object sender, RoutedEventArgs e)
         {
@@ -191,6 +223,7 @@ namespace ServerWorker
                             AsyncDia.diana_version.RemoveAt(input.queueIndex);
                             AsyncDia.stop_conv.RemoveAt(input.queueIndex);
                             AsyncDia.conv_val.RemoveAt(input.queueIndex);
+                            AsyncDia.email.RemoveAt(input.queueIndex);
                         }
                     }
                 }
@@ -223,14 +256,15 @@ namespace ServerWorker
                 {
                     outp = await AsyncDia.add_job_(AsyncDia.jobs[count], AsyncDia.diana_version[count], AsyncDia.stop_conv[count], AsyncDia.conv_val[count]);
 
+
+                    // wait 4 seconds, to make sure .out file is created.
+                    System.Threading.Thread.Sleep(4000);
+
+                    var dir = new DirectoryInfo(AsyncDia.root);
+                    var outFile = dir.GetFiles(String.Format("{0}.out", AsyncDia.title));
+
                     try
                     {
-                        // wait 4 seconds, to make sure .out file is created.
-                        System.Threading.Thread.Sleep(4000);
-
-                        var dir = new DirectoryInfo(AsyncDia.root);
-                        var outFile = dir.GetFiles(String.Format("{0}.out", AsyncDia.title));
-
                         using (StreamReader sr = new StreamReader(outFile[0].FullName))
                         {
                             var content = sr.ReadToEnd();
@@ -239,12 +273,13 @@ namespace ServerWorker
                                 break;
                             }
                         }
-
                     }
-                    catch (IOException) // There is not .out file
+                    catch (IndexOutOfRangeException)
                     {
                         break;
                     }
+
+      
 
                 }
 

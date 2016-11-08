@@ -17,6 +17,7 @@ namespace ServerWorker
         public static List<string> diana_version = new List<string>();
         public static List<bool> stop_conv = new List<bool>();
         public static List<double> conv_val = new List<double>();
+        public static List<string> email = new List<string>();
         public static string root = null;
         public static string title = null;
         public static int count = 0;
@@ -29,6 +30,44 @@ namespace ServerWorker
             root = Directory.GetParent(path).ToString();
             stop_convergence = stopConv;
             convergence_value = value;
+
+            var dcf = path.Remove(path.Length - 4) + ".dcf";
+            // Check if filos in instantiated
+            string content;
+
+            try
+            {
+                using (FileStream str = File.Open(dcf, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite))
+                {
+                    using (StreamReader rd = new StreamReader(str))
+                    {
+                        content = rd.ReadToEnd();
+                    }
+                }
+
+                if (!(content.Contains("*FILOS") && content.Contains("*INPUT")))
+                {
+                    File.Delete(dcf);
+                    using (StreamWriter rw = new StreamWriter(dcf, false))
+                    {
+                        content = "*FILOS" + Environment.NewLine + "  INITIA" + Environment.NewLine + " * INPUT" + Environment.NewLine + content;
+                        rw.Write(content);
+                    }
+                }
+            }
+            catch (FileNotFoundException)
+            {
+                try
+                {
+                    ((MainWindow)System.Windows.Application.Current.MainWindow).output("Could not find a .dcf file.");
+                }
+                catch (Exception)
+                {
+                    Debug.WriteLine("Could not find a .dcf file.");
+                }
+                MainWindow.cancelNowRunning = true;
+            }
+
 
             // Read solver.bat from resources
             Stream stream = null;
@@ -89,7 +128,7 @@ namespace ServerWorker
                     }
                     try
                     {
-                        File.Delete(System.IO.Path.Combine(root, "solver.bat"));
+                        File.Delete(Path.Combine(root, "solver.bat"));
                     }
                     catch (Exception)
                     {
@@ -104,8 +143,6 @@ namespace ServerWorker
 
         [System.Runtime.InteropServices.DllImport("user32.dll")]
         static extern bool SetForegroundWindow(IntPtr hWnd);
-
-
 
         static Task RunProcessAsync(string fileName)
         // Async method for waiting for the commandbox to be finished.
@@ -164,6 +201,11 @@ namespace ServerWorker
                 Debug.WriteLine("Console interrupted");
             }
             ConvergenceChecker.stopMe = true;
+            var mailAdress = AsyncDia.email[AsyncDia.count];
+            if (mailAdress != "none")
+            {
+                Mail.sendMail(mailAdress);
+            }
             return tcs.Task;
         }
     }
