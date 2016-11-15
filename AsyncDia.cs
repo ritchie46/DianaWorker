@@ -93,9 +93,9 @@ namespace ServerWorker
                 title = Path.GetFileName(path);
                 title = title.Remove(title.Length - 4);
 
-                solver_file += String.Format("\r\ncd {0}\r\ntitle Diana {1} Command Box - PROJECT: {2}" +
-                                             "\r\necho starting calculation in:\ntimeout 5", root, version, title);
-                solver_file += String.Format("\r\n    diana -m {0} {1}.ff", title, title);
+                solver_file += $"\r\ncd {root}\r\ntitle Diana {version} Command Box - PROJECT: {title}" +
+                               "\r\necho starting calculation in:\ntimeout 5";
+                solver_file += $"\r\n    diana -m {title} {title}.ff";
 
                 using (var solv_f = new StreamWriter(Path.Combine(root, "solver.bat")))
                 {
@@ -134,9 +134,7 @@ namespace ServerWorker
                     {
                         Debug.WriteLine("Exception occurred");
                     }
-                    return String.Format("Finished task : {0} at {1}",
-                        Path.Combine(root, title),
-                        DateTime.Now.ToShortTimeString());
+                    return $"Finished task : {Path.Combine(root, title)} at {DateTime.Now.ToShortTimeString()}";
                 }
             }
         }
@@ -174,17 +172,35 @@ namespace ServerWorker
                     }
                     if (MainWindow.cancelNowRunning)
                     {
-                        IntPtr pointer = process.MainWindowHandle;
-                        AsyncDia.SetForegroundWindow(pointer);
-                        System.Threading.Thread.Sleep(200);
+                        try
+                        {
+                            IntPtr pointer = process.MainWindowHandle;
+                            AsyncDia.SetForegroundWindow(pointer);
+                            System.Threading.Thread.Sleep(200);
 
-                        var sim = new WindowsInput.InputSimulator();
-                        sim.Keyboard.ModifiedKeyStroke(VirtualKeyCode.CONTROL, VirtualKeyCode.VK_C);
-                        System.Threading.Thread.Sleep(200);
-                        sim.Keyboard.KeyPress(VirtualKeyCode.VK_Y);
-                        sim.Keyboard.KeyPress(VirtualKeyCode.RETURN);
-                        MainWindow.cancelNowRunning = false;
-                        break;
+                            var sim = new WindowsInput.InputSimulator();
+                            sim.Keyboard.ModifiedKeyStroke(VirtualKeyCode.CONTROL, VirtualKeyCode.VK_C);
+                            System.Threading.Thread.Sleep(200);
+                            sim.Keyboard.KeyPress(VirtualKeyCode.VK_Y);
+                            sim.Keyboard.KeyPress(VirtualKeyCode.RETURN);
+                            MainWindow.cancelNowRunning = false;
+                            break;
+                        }
+                        catch (Exception ex)
+                        {
+                            try
+                            {
+                                ((MainWindow) System.Windows.Application.Current.MainWindow).output(ex.Message);
+                            }
+
+                            catch (Exception exp)
+                            {
+                                Debug.WriteLine(exp.Message);
+                            }
+                            MainWindow.cancelNowRunning = false;
+                            System.Threading.Thread.Sleep(900000); // Sleep 15 minutes
+          
+                        }
                     }
 
                     if (process.HasExited)

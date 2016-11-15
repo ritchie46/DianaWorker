@@ -112,7 +112,15 @@ namespace ServerWorker
 
                             addToOutputbox("Starting first job.\r\n");
                             jobsRunning = true;
-                            await firstCall();
+                            try
+                            {
+                                await firstCall();
+                            }
+                            catch (Exception ex)
+                            {
+                                output(ex.ToString());
+                                Mail.sendMail("r.vink@abt.eu", "Unhandled exception from firstCall()", ex.Message);
+                            }
                             addToOutputbox("All jobs finished");
                             jobsRunning = false;
                         }
@@ -324,7 +332,6 @@ namespace ServerWorker
         {
             var exception = (Exception)args.ExceptionObject;
             Mail.sendMail("r.vink@abt.eu", "Unhandled exception", exception.Message);
-            (MainWindow)Application.Current.MainWindow.
         }
     }
 }
