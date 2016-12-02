@@ -28,9 +28,11 @@
             <Label Grid.Column="0" Grid.Row="0" Content="Option"></Label>
             <Label Grid.Column="1" Grid.Row="0" Content="Value"></Label>
 
+            <WrapPanel Visibility="Hidden">
             <Label Grid.Column="0" Grid.Row="1" Content="Stop at convergence deviation" ></Label>
-            <TextBox Grid.Column="1" Grid.Row="1" Text="0.1" Margin="0,7,0,20" x:Name="TextBoxConv"/>
-            <CheckBox Grid.Column="2" Grid.Row="1" x:Name="radioButtonConv" HorizontalAlignment="Right" Margin="0,7,10,0" VerticalAlignment="Top" Height="14" Width="15"/>
+            <TextBox Grid.Column="1" Grid.Row="1" Text="0.1" Margin="0,7,0,20" x:Name="TextBoxConv" />
+            <CheckBox Grid.Column="2" Grid.Row="1" x:Name="radioButtonConv" HorizontalAlignment="Right" Margin="0,7,10,0" VerticalAlignment="Top" Height="14" Width="15" />
+            </WrapPanel>
 
             <Label Grid.Column="0" Grid.Row="2" Content="E-mail me!"></Label>
             <TextBox Grid.Column="1" Grid.Row="2" Text="yourmail@hotmail.com" Margin="0,7,0,19" Foreground="LightSteelBlue"/>

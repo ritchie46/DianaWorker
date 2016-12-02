@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Reflection;
 using System.Diagnostics;
+using System.Windows.Interop;
 using WindowsInput.Native;
 
 namespace ServerWorker
@@ -103,8 +104,13 @@ namespace ServerWorker
                     solv_f.Close();
 
                     var filename = Path.Combine(root, "solver.bat");
+                    
+                    // Start python script
+                    DianaLive.Start(root);
 
-                    Task.Run(() => ConvergenceChecker.check());
+                    // Start convergence checker
+                    //Task.Run(() => ConvergenceChecker.check());
+
                     await Task.Run(() =>
                     {
                         RunProcessAsync(filename);
@@ -113,6 +119,9 @@ namespace ServerWorker
                     // Remove Filos File
                     var dir = new DirectoryInfo(root);
                     var ff_files = dir.GetFiles("*.ff");
+
+                    // Stop python script
+                    DianaLive.Stop();
 
                     foreach (FileInfo filos in ff_files)
                     {
@@ -129,6 +138,7 @@ namespace ServerWorker
                     try
                     {
                         File.Delete(Path.Combine(root, "solver.bat"));
+                        File.Delete(Path.Combine(root, "parser.pyw"));
                     }
                     catch (Exception)
                     {
@@ -140,9 +150,9 @@ namespace ServerWorker
         }
 
         [System.Runtime.InteropServices.DllImport("user32.dll")]
-        static extern bool SetForegroundWindow(IntPtr hWnd);
+        private static extern bool SetForegroundWindow(IntPtr hWnd);
 
-        static Task RunProcessAsync(string fileName)
+        private static Task RunProcessAsync(string fileName)
         // Async method for waiting for the commandbox to be finished.
         {
 
@@ -222,4 +232,36 @@ namespace ServerWorker
             return tcs.Task;
         }
     }
+}
+
+internal class DianaLive
+{   
+    private static Process p = new Process();
+
+    public static void Start(string root)
+    {
+        var pythonstream = Assembly.GetExecutingAssembly().GetManifestResourceStream("ServerWorker.Resources.parser.pyw");
+        var path = Path.Combine(root, "parser.pyw");
+
+        using (var f = new StreamReader(pythonstream))
+        {
+
+            var script = f.ReadToEnd();
+
+            using (var fw = new StreamWriter(path))
+            {
+                fw.Write(script);
+            }
+        }
+
+        DianaLive.p.StartInfo.FileName = path;
+        DianaLive.p.Start();
+    }
+
+    public static void Stop()
+    {
+        DianaLive.p.Kill();
+    }
+
+
 }

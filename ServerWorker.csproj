@@ -123,6 +123,7 @@
     <EmbeddedResource Include="Resources\solver10.1.bat" />
     <EmbeddedResource Include="Resources\solver10.0.bat" />
     <EmbeddedResource Include="Resources\solverDEV.0.bat" />
+    <EmbeddedResource Include="Resources\parser.pyw" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
