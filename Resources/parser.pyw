@@ -1,9 +1,8 @@
 import re
-import openpyxl as pxl
+import csv
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import os
-from PyQt4.QtGui import *
 import sys
 from PyQt4 import QtCore, QtGui
 import time
@@ -11,12 +10,9 @@ import time
 
 class OutParser:
     def __init__(self, path=None):
-        import os
-        for filename in os.listdir(os.getcwd()):
-            if filename[-4:] == ".out":
-                path = os.path.join(os.getcwd(), filename)
-                break
-        self.out_file = path
+        print(path)
+        self.dir = path
+        self.out_file = None
 
         # read from the out file
         self.load_steps = None
@@ -47,8 +43,13 @@ class OutParser:
         """
         self.force_sum = None
 
+    def parse_out_file(self):
+        if self.out_file is None:
+            for filename in os.listdir(self.dir):
+                if filename[-4:] == ".out":
+                    self.out_file = os.path.join(self.dir, filename)
+                    break
 
-    def _parse_out_file(self):
         self.load_steps = []
         self.load_factors = []
         self.load_numbers = []
@@ -156,11 +157,14 @@ class OutParser:
         ax = fig.add_subplot(gs[0, -1:])
         ax.set_ylabel("numerical deviation")
         ax.set_xlabel("load steps")
-
         a = ax.twinx()
+
+        sol = equal_length(x_val, self.iterations)
         try:
-            a.step(x_val, self.iterations, color="g", label="iterations")
+            a.step(sol[0], sol[1], color="g", label="iterations")
         except ValueError:
+            print("Plot 1 not succeeded")
+            plt.close(fig)
             return 1
 
         a.set_ylim(0, max(self.iterations) + 10)
@@ -168,40 +172,108 @@ class OutParser:
 
         try:
             if len(self.energy_conv) > 0:
-                ax.plot(x_val, self.energy_conv, label="energy")
+                sol = equal_length(x_val, self.energy_conv)
+                ax.plot(sol[0], sol[1], label="energy")
             if len(self.force_conv) > 0:
-                ax.plot(x_val, self.force_conv, label="force")
-            if len(self.displ_conv) >0:
-                ax.plot(x_val, self.displ_conv, label="displacement")
+                sol = equal_length(x_val, self.force_conv)
+                ax.plot(sol[0], sol[1], label="force")
+            if len(self.displ_conv) > 0:
+                sol = equal_length(x_val, self.displ_conv)
+                ax.plot(sol[0], sol[1], label="displacement")
         except ValueError:
+            print("Plot 2 not succeeded")
+            plt.close(fig)
             return 1
 
         ax.legend(loc=2)
         a.legend(loc=4)
 
+        sol = equal_length(x_val, list(map(lambda x: x[0], self.crack_columns)))
         # second plot
         ax = fig.add_subplot(gs[1, -1:])
-        ax.plot(x_val, list(map(lambda x: x[0], self.crack_columns)), label="cracks")
-        ax.plot(x_val, list(map(lambda x: x[0], self.plast_columns)), label="plasticity")
+        ax.plot(sol[0], sol[1], label="cracks")
+        sol = equal_length(x_val, list(map(lambda x: x[0], self.plast_columns)))
+        ax.plot(sol[0], sol[1], label="plasticity")
         ax.set_xlabel("load steps")
         ax.legend(loc=2)
 
         # third plot
         ax = fig.add_subplot(gs[0:, 0])
-
+        sol = equal_length(x_val, self.force_sum)
         try:
-            ax.plot(x_val, list(map(lambda x: x[0] / 1000, self.force_sum)), label="force x")
-            ax.plot(x_val, list(map(lambda x: x[1] / 1000, self.force_sum)), label="force y")
-            ax.plot(x_val, list(map(lambda x: x[2] / 1000, self.force_sum)), label="force z")
+            ax.plot(sol[0], list(map(lambda x: x[0] / 1000, sol[1])), label="force x")
+            ax.plot(sol[0], list(map(lambda x: x[1] / 1000, sol[1])), label="force y")
+            ax.plot(sol[0], list(map(lambda x: x[2] / 1000, sol[1])), label="force z")
         except ValueError:
+            print("Plot 2 not succeeded")
+            plt.close(fig)
             return 1
 
         ax.set_ylabel("force [kN]")
         ax.set_xlabel("load steps")
         ax.legend(loc=1)
-        f = os.getcwd() + "\\live.png"
+        f = self.dir + "\\live.png"
         plt.tight_layout()
         fig.savefig(f, dpi=300)
+        plt.close(fig)
+
+    def to_csv(self):
+        os.makedirs("%s/parsed_csv" % self.dir, exist_ok=True)
+
+        files = [
+            self.load_steps,
+            self.load_factors,
+            self.load_numbers,
+            self.load_increments,
+            self.convergence,
+            self.iterations,
+            self.energy_conv,
+            self.displ_conv,
+            self.force_conv,
+            self.plast_columns,
+            self.crack_columns,
+            self.force_sum,
+        ]
+        names = [
+            "load_steps",
+            "load_factors",
+            "load_numbers",
+            "load_increments",
+            "convergence",
+            "iterations",
+            "energy_convergence",
+            "displacement_convergence",
+            "force_convergence",
+            "plasticity",
+            "cracks",
+            "sum_forces"
+        ]
+
+        for i in range(len(files)):
+            if len(files[i]) > 0:
+                if type(files[i][0]) != list:
+                    try:
+                        with open("%s/parsed_csv/%s.csv" % (self.dir, names[i]), 'w') as f:
+                            write = csv.writer(f)
+                            write.writerow(files[i])
+                    except PermissionError:
+                        pass
+
+
+def equal_length(a, b):
+    if len(a) == len(b):
+        return a, b
+    elif len(a) < len(b):
+        short = a
+    else:
+        short = b
+
+    a_new = []
+    b_new = []
+    for i in range(len(short)):
+        a_new.append(a[i])
+        b_new.append(b[i])
+    return a_new, b_new
 
 
 class MyThread(QtCore.QThread):
@@ -213,7 +285,7 @@ class MyThread(QtCore.QThread):
 
     def loop(self):
         while 1:
-            time.sleep(60)
+            time.sleep(15)
             self.emit(QtCore.SIGNAL("update()"))
 
 
@@ -232,18 +304,18 @@ class ImgUi(QtGui.QMainWindow):
         self.setWindowTitle('diana live')
 
         # text label
-        self.l1 = QLabel(self)
+        self.l1 = QtGui.QLabel(self)
         self.l1.setText("Data is being queried")
         self.l1.setAlignment(QtCore.Qt.AlignCenter)
         self.l1.setGeometry(0, 0, self.img_w, self.padding)
 
-        self.label = QLabel(self)
+        self.label = QtGui.QLabel(self)
         self.label.setScaledContents(True)
-        pixmap = QPixmap(os.getcwd() + "/live.png")
+        pixmap = QtGui.QPixmap(a.dir + "/live.png")
 
         self.label.setPixmap(pixmap)
         self.label.setGeometry(self.padding, self.padding, self.img_w, self.img_h)
-        self.layout = QVBoxLayout(self)
+        self.layout = QtGui.QVBoxLayout(self)
         self.layout.addWidget(self.l1)
         self.layout.addWidget(self.label)
         thread = MyThread(self)
@@ -251,35 +323,24 @@ class ImgUi(QtGui.QMainWindow):
         thread.start()
 
     def update(self):
-        try:
-            a._parse_out_file()
-            a.plot()
-        except:
-            print("An exception occured.")
+        a.parse_out_file()
+        a.to_csv()
+        a.plot()
+
         self.l1.setText("Current load step: %d" % a.load_steps[-1])
-        self.label.setPixmap(QPixmap(os.getcwd() + "/live.png"))
+        self.label.setPixmap(QtGui.QPixmap(a.dir + "/live.png"))
 
 
 if __name__ == "__main__":
-    a = OutParser()
-    # a._parse_out_file()
-    # a.plot()
+    print(sys.argv)
 
-
-
-    """
-    print("Load factors\n", a.load_factors, "\nIncrements\n", a.load_increments, "\nsteps\n", a.load_steps,
-          "\nload number\n", a.load_numbers, "\nConvergence\n", a.convergence, "\nplasticity\n", a.plast_columns,
-          "\ncracks\n", a.crack_columns, "\ncumulative force\n", a.force_sum, "\niterations\n", a.iterations,
-          "\nenergy_conv\n", a.energy_conv, "\ndispl_conv\n", a.displ_conv, "\nforce_conv\n", a.force_conv)
-    """
+    if len(sys.argv) > 1:
+        a = OutParser(sys.argv[1])
+    else:
+        a = OutParser(os.getcwd())
 
     app = QtGui.QApplication(sys.argv)
     window = ImgUi()
     window.show()
     sys.exit(app.exec_())
-
-
-
-
 

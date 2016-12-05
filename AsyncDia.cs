@@ -254,13 +254,26 @@ internal class DianaLive
             }
         }
 
-        DianaLive.p.StartInfo.FileName = path;
-        DianaLive.p.Start();
+        //DianaLive.p.StartInfo.FileName = "cmd.exe";
+        ProcessStartInfo startInfo = new ProcessStartInfo();
+        startInfo.FileName = "cmd.exe";
+        startInfo.Arguments = "C:/Anaconda3/python.exe"; // + path + "test";
+        //DianaLive.p.Proces StartInfo.Arguments = "echo succes"; // + path + "test";
+        //DianaLive.p.StartInfo = startInfo;
+        //DianaLive.p.Start();
+        DianaLive.p = Process.Start("C:/Anaconda3/pythonw", path + " " + root);
     }
 
     public static void Stop()
     {
-        DianaLive.p.Kill();
+        try
+        {
+            DianaLive.p.Kill();
+        }
+        catch
+        {
+            
+        }
     }
 
 

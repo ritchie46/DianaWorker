@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ServerWorker"
         mc:Ignorable="d"
-        Title="vikDIANA WORKER version1.0.2b" Height="650" Width="525"
+        Title="vikDIANA WORKER version1.1" Height="650" Width="525"
         Icon="/Resources/sickle-and-hammer.png">
 
     <Window.Background>

@@ -74,6 +74,7 @@
     <Compile Include="inputDialog.xaml.cs">
       <DependentUpon>inputDialog.xaml</DependentUpon>
     </Compile>
+    <Compile Include="secret.cs" />
     <Page Include="dialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
