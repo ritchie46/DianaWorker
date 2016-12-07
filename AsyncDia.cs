@@ -106,7 +106,7 @@ namespace ServerWorker
                     var filename = Path.Combine(root, "solver.bat");
                     
                     // Start python script
-                    DianaLive.Start(root);
+                    DianaLive.Start(root, title);
 
                     // Start convergence checker
                     //Task.Run(() => ConvergenceChecker.check());
@@ -238,7 +238,7 @@ internal class DianaLive
 {   
     private static Process p = new Process();
 
-    public static void Start(string root)
+    public static void Start(string root, string title)
     {
         var pythonstream = Assembly.GetExecutingAssembly().GetManifestResourceStream("ServerWorker.Resources.parser.pyw");
         var path = Path.Combine(root, "parser.pyw");
@@ -254,14 +254,10 @@ internal class DianaLive
             }
         }
 
-        //DianaLive.p.StartInfo.FileName = "cmd.exe";
         ProcessStartInfo startInfo = new ProcessStartInfo();
         startInfo.FileName = "cmd.exe";
-        startInfo.Arguments = "C:/Anaconda3/python.exe"; // + path + "test";
-        //DianaLive.p.Proces StartInfo.Arguments = "echo succes"; // + path + "test";
-        //DianaLive.p.StartInfo = startInfo;
-        //DianaLive.p.Start();
-        DianaLive.p = Process.Start("C:/Anaconda3/pythonw", path + " " + root);
+        startInfo.Arguments = "C:/Anaconda3/python.exe"; 
+        DianaLive.p = Process.Start("C:/Anaconda3/pythonw", $"{path} {root} {path}/{title}.out");
     }
 
     public static void Stop()
