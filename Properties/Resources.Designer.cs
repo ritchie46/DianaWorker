@@ -61,16 +61,6 @@ namespace ServerWorker.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        public static byte[] parser {
-            get {
-                object obj = ResourceManager.GetObject("parser", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to @echo off
         ///rem
         ///rem Get build type from argument list

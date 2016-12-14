@@ -124,7 +124,6 @@
     <EmbeddedResource Include="Resources\solver10.1.bat" />
     <EmbeddedResource Include="Resources\solver10.0.bat" />
     <EmbeddedResource Include="Resources\solverDEV.0.bat" />
-    <EmbeddedResource Include="Resources\parser.pyw" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -141,6 +140,11 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="sickle-and-hammer.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\parser.py">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -346,4 +346,3 @@ if __name__ == "__main__":
     window = ImgUi()
     window.show()
     sys.exit(app.exec_())
-

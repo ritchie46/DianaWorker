@@ -6,8 +6,12 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Reflection;
 using System.Diagnostics;
+using System.Net.Mime;
+using System.Windows;
+using System.Windows.Forms.PropertyGridInternal;
 using System.Windows.Interop;
 using WindowsInput.Native;
+using ServerWorker.Properties;
 
 namespace ServerWorker
 {
@@ -240,24 +244,23 @@ internal class DianaLive
 
     public static void Start(string root, string title)
     {
-        var pythonstream = Assembly.GetExecutingAssembly().GetManifestResourceStream("ServerWorker.Resources.parser.pyw");
-        var path = Path.Combine(root, "parser.pyw");
+ 
+        var dir = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+        var path = Path.Combine(dir, "Resources", "parser.py");
 
-        using (var f = new StreamReader(pythonstream))
+        string script;
+        using (var sr = new StreamReader(path))
         {
+            script = sr.ReadToEnd();
+        }
+        path = Path.Combine(root, "parser.pyw");
 
-            var script = f.ReadToEnd();
-
-            using (var fw = new StreamWriter(path))
-            {
-                fw.Write(script);
-            }
+        using (var fw = new StreamWriter(path))
+        {
+            fw.Write(script);
         }
 
-        ProcessStartInfo startInfo = new ProcessStartInfo();
-        startInfo.FileName = "cmd.exe";
-        startInfo.Arguments = "C:/Anaconda3/python.exe"; 
-        DianaLive.p = Process.Start("C:/Anaconda3/pythonw", $"{path} {root} {path}/{title}.out");
+        DianaLive.p = Process.Start("C:/Anaconda3/pythonw", $"{path} {root} {root}\\{title}.out");
     }
 
     public static void Stop()
