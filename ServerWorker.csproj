@@ -67,6 +67,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="AsyncDia.cs" />
+    <Compile Include="Settings.cs" />
     <Compile Include="ConvergenChecker.cs" />
     <Compile Include="dialog.xaml.cs">
       <DependentUpon>dialog.xaml</DependentUpon>
@@ -142,6 +143,7 @@
     <Resource Include="sickle-and-hammer.ico" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Resources\007.py" />
     <None Include="Resources\parser.py">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

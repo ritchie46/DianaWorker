@@ -36,6 +36,9 @@ namespace ServerWorker
             stop_convergence = stopConv;
             convergence_value = value;
 
+            title = Path.GetFileName(path);
+            title = title.Remove(title.Length - 4);
+
             var dcf = path.Remove(path.Length - 4) + ".dcf";
             // Check if filos in instantiated
             string content;
@@ -72,102 +75,81 @@ namespace ServerWorker
                 }
                 MainWindow.cancelNowRunning = true;
             }
-
-
-            // Read solver.bat from resources
-            Stream stream = null;
-            switch (version)
-            {
-                case "10.1":
-                    stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("ServerWorker.Resources.solver10.1.bat");
-                    break;
-                case "10.0":
-                    stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("ServerWorker.Resources.solver10.0.bat");
-                    break;
-                case "EV.0":
-                    stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("ServerWorker.Resources.solverDEV.0.bat");
-                    version = "DEVELOPMENT 10.0";
-                    break;
-            }
-
-            using (TextReader tr = new StreamReader(stream))
-            {
-                var solver_file = tr.ReadToEnd();
-
-                // Append information to solver.bat
-                title = Path.GetFileName(path);
-                title = title.Remove(title.Length - 4);
-
-                solver_file += $"\r\ncd {root}\r\ntitle Diana {version} Command Box - PROJECT: {title}" +
-                               "\r\necho starting calculation in:\ntimeout 5";
-                solver_file += $"\r\n    diana -m {title} {title}.ff";
-
-                using (var solv_f = new StreamWriter(Path.Combine(root, "solver.bat")))
-                {
-                    solv_f.Write(solver_file);
-                    solv_f.Close();
-
-                    var filename = Path.Combine(root, "solver.bat");
                     
-                    // Start python script
-                    DianaLive.Start(root, title);
+                // Start python script
+                DianaLive.Start(root, title);
 
-                    // Start convergence checker
-                    //Task.Run(() => ConvergenceChecker.check());
+                await Task.Run(() =>
+                {
+                    RunProcessAsync(root, title, version);
+                });
 
-                    await Task.Run(() =>
-                    {
-                        RunProcessAsync(filename);
-                    });
+                // Remove Filos File
+                var dir = new DirectoryInfo(root);
+                var ff_files = dir.GetFiles("*.ff");
 
-                    // Remove Filos File
-                    var dir = new DirectoryInfo(root);
-                    var ff_files = dir.GetFiles("*.ff");
+                // Stop python script
+                DianaLive.Stop();
 
-                    // Stop python script
-                    DianaLive.Stop();
-
-                    foreach (FileInfo filos in ff_files)
-                    {
-                        try
-                        {
-                            filos.Attributes = FileAttributes.Normal;
-                            File.Delete(filos.FullName);
-                        }
-                        catch (Exception)
-                        {
-                            Debug.WriteLine("Exception occurred");
-                        }
-                    }
+                foreach (FileInfo filos in ff_files)
+                {
                     try
                     {
-                        File.Delete(Path.Combine(root, "solver.bat"));
-                        File.Delete(Path.Combine(root, "parser.pyw"));
+                        filos.Attributes = FileAttributes.Normal;
+                        File.Delete(filos.FullName);
                     }
                     catch (Exception)
                     {
                         Debug.WriteLine("Exception occurred");
                     }
-                    return $"Finished task : {Path.Combine(root, title)} at {DateTime.Now.ToShortTimeString()}";
                 }
+                try
+                {
+                    File.Delete(Path.Combine(root, "parser.pyw"));
+                    File.Delete(Path.Combine(root, ".007.py"));
+                }
+                catch (Exception)
+                {
+                    Debug.WriteLine("Exception occurred");
+                }
+
+                return $"Finished task : {Path.Combine(root, title)} at {DateTime.Now.ToShortTimeString()}";
             }
-        }
+          
 
-        [System.Runtime.InteropServices.DllImport("user32.dll")]
-        private static extern bool SetForegroundWindow(IntPtr hWnd);
 
-        private static Task RunProcessAsync(string fileName)
+        private static Task RunProcessAsync(string root, string title, string version)
         // Async method for waiting for the commandbox to be finished.
         {
+
+            // Write the solver file to the root directory
+            var path = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Resources", "007.py");
+            string script;
+            using (var sr = new StreamReader(path))
+            {
+                script = sr.ReadToEnd();
+            }
+            path = Path.Combine(root, ".007.py");
+
+            using (var fw = new StreamWriter(path))
+            {
+                fw.Write(script);
+            }
 
             // there is no non-generic TaskCompletionSource
             var tcs = new TaskCompletionSource<bool>();
 
-            var process = new Process
+            //var process = new Process();
+            var process = new Process 
             {
-                StartInfo = { FileName = fileName },
+                StartInfo =
+                {
+                    FileName = ServerWorker.Settings.PythonPath,
+                    Arguments = $"{path} {title} {version}"
+                },
 
             };
+
             process.Exited += (sender, args) =>
             {
                 tcs.SetResult(true);
@@ -180,46 +162,20 @@ namespace ServerWorker
                 while (true)
                 {
                     if (!processRunning)
-                    {
+                    {   
+                        Debug.WriteLine("Start new process");
                         process.Start();
                         processRunning = true;
                     }
-                    if (MainWindow.cancelNowRunning)
-                    {
-                        try
-                        {
-                            IntPtr pointer = process.MainWindowHandle;
-                            AsyncDia.SetForegroundWindow(pointer);
-                            System.Threading.Thread.Sleep(200);
-
-                            var sim = new WindowsInput.InputSimulator();
-                            sim.Keyboard.ModifiedKeyStroke(VirtualKeyCode.CONTROL, VirtualKeyCode.VK_C);
-                            System.Threading.Thread.Sleep(200);
-                            sim.Keyboard.KeyPress(VirtualKeyCode.VK_Y);
-                            sim.Keyboard.KeyPress(VirtualKeyCode.RETURN);
-                            MainWindow.cancelNowRunning = false;
-                            break;
-                        }
-                        catch (Exception ex)
-                        {
-                            try
-                            {
-                                ((MainWindow) System.Windows.Application.Current.MainWindow).output(ex.Message);
-                            }
-
-                            catch (Exception exp)
-                            {
-                                Debug.WriteLine(exp.Message);
-                            }
-                            MainWindow.cancelNowRunning = false;
-                            System.Threading.Thread.Sleep(900000); // Sleep 15 minutes
-          
-                        }
-                    }
 
                     if (process.HasExited)
-                    {
+                    {   
+                        Debug.WriteLine("Process has exited");
                         break;
+                    }
+                    else
+                    {
+                        System.Threading.Thread.Sleep(3000);
                     }
                 }
             }
@@ -227,7 +183,7 @@ namespace ServerWorker
             {
                 Debug.WriteLine("Console interrupted");
             }
-            ConvergenceChecker.stopMe = true;
+
             var mailAdress = AsyncDia.email[AsyncDia.count];
             if (mailAdress != "none")
             {
@@ -260,7 +216,7 @@ internal class DianaLive
             fw.Write(script);
         }
 
-        DianaLive.p = Process.Start("C:/Anaconda3/pythonw", $"{path} {root} {root}\\{title}.out");
+        DianaLive.p = Process.Start(ServerWorker.Settings.PythonwPath, $"{path} {root} {root}\\{title}.out");
     }
 
     public static void Stop()
@@ -274,6 +230,5 @@ internal class DianaLive
             
         }
     }
-
-
 }
+

@@ -289,9 +289,6 @@ namespace ServerWorker
                     {
                         break;
                     }
-
-      
-
                 }
 
                 addToOutputbox(outp);
